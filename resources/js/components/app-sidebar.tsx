@@ -28,12 +28,18 @@ export function AppSidebar() {
 
   // Auto-select business if user has only one
   useEffect(() => {
-    if (userBusinesses.length === 1 && !currentBusiness) {
+    // Only redirect if we're on the main dashboard and user has exactly one business
+    const currentPath = window.location.pathname;
+    const isOnMainDashboard = currentPath === '/dashboard';
+    
+    if (userBusinesses.length === 1 && isOnMainDashboard) {
       const business = userBusinesses[0];
-      // Redirect to the business dashboard
-      window.location.href = `/businesses/${business.slug}/dashboard`;
+      // Redirect to the business dashboard only if we're not already there
+      if (currentPath !== `/businesses/${business.slug}/dashboard`) {
+        window.location.href = `/businesses/${business.slug}/dashboard`;
+      }
     }
-  }, [userBusinesses, currentBusiness]);
+  }, [userBusinesses]);
 
   // Handle business change
   const handleBusinessChange = (business: any) => {
