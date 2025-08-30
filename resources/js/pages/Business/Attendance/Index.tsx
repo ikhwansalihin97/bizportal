@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Clock, Users, Calendar, TrendingUp, User, CheckCircle, XCircle, AlertCircle, Hourglass } from 'lucide-react';
+import { Clock, Users, Calendar, TrendingUp, User, CheckCircle, XCircle, AlertCircle, Hourglass, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Attendance {
@@ -111,9 +111,7 @@ export default function AttendanceIndex({
           'Content-Type': 'application/json',
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
         },
-        body: JSON.stringify({
-          notes: clockOutNotes,
-        }),
+        body: JSON.stringify({ notes: clockOutNotes }),
       });
 
       if (response.ok) {
@@ -126,6 +124,36 @@ export default function AttendanceIndex({
       alert('Failed to clock out');
     } finally {
       setIsClockingOut(false);
+    }
+  };
+
+  const handleEditAttendance = (attendance: Attendance) => {
+    // Navigate to edit page or open edit modal
+    window.location.href = `/businesses/${business.slug}/attendance/records/${attendance.uuid}/edit`;
+  };
+
+  const handleDeleteAttendance = async (attendance: Attendance) => {
+    if (!confirm('Are you sure you want to delete this attendance record? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/businesses/${business.slug}/attendance/records/${attendance.uuid}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        },
+      });
+
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to delete attendance record');
+      }
+    } catch (error) {
+      alert('Failed to delete attendance record');
     }
   };
 
@@ -381,6 +409,28 @@ export default function AttendanceIndex({
                           {getStatusIcon(attendance.status)}
                           {getStatusBadge(attendance.status)}
                         </div>
+                        
+                        {/* Action buttons for managers and superadmins */}
+                        {canManage && (
+                          <div className="flex items-center gap-2 ml-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditAttendance(attendance)}
+                              className="h-8 px-2"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteAttendance(attendance)}
+                              className="h-8 px-2 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
