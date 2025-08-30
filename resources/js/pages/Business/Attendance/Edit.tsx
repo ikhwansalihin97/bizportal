@@ -61,34 +61,25 @@ export default function AttendanceEdit({
     // Parse the UTC datetime from database and convert to local timezone
     const utcDate = new Date(dateTimeString);
     
-    // Get local timezone offset
-    const localOffset = utcDate.getTimezoneOffset() * 60000;
-    
-    // Convert to local time
-    const localDate = new Date(utcDate.getTime() - localOffset);
-    
     // Format for datetime-local input (YYYY-MM-DDTHH:mm)
-    return localDate.toISOString().slice(0, 16);
+    // The input will automatically handle timezone conversion
+    return utcDate.toISOString().slice(0, 16);
   };
 
   // Helper function to format time for display (respecting timezone)
   const formatTimeForDisplay = (dateTimeString: string | null) => {
     if (!dateTimeString) return 'Not set';
     
-    const utcDate = new Date(dateTimeString);
-    const localOffset = utcDate.getTimezoneOffset() * 60000;
-    const localDate = new Date(utcDate.getTime() - localOffset);
-    
-    return format(localDate, 'HH:mm');
+    // Parse the UTC datetime and display in local time
+    const date = new Date(dateTimeString);
+    return format(date, 'HH:mm');
   };
 
   // Helper function to format date for display (respecting timezone)
   const formatDateForDisplay = (dateString: string) => {
-    const utcDate = new Date(dateString);
-    const localOffset = utcDate.getTimezoneOffset() * 60000;
-    const localDate = new Date(utcDate.getTime() - localOffset);
-    
-    return format(localDate, 'MMM dd, yyyy');
+    // Parse the date and display in local time
+    const date = new Date(dateString);
+    return format(date, 'MMM dd, yyyy');
   };
 
   const { data, setData, put, processing, errors } = useForm({
