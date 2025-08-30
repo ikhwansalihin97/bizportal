@@ -11,11 +11,12 @@ import { NavMain } from "./nav-main"
 import { NavFooter } from "./nav-footer"
 import { NavUser } from "./nav-user"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "./ui/sidebar"
-import { Button } from "./ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "./ui/dropdown-menu"
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "./ui/sidebar"
 
 export function AppSidebar() {
   const { auth, currentBusiness } = usePage<SharedData>().props
+  const { isMobile } = useSidebar()
 
   // Get user's businesses
   const userBusinesses = auth.businesses || []
@@ -127,59 +128,64 @@ export function AppSidebar() {
         <div className="p-4 space-y-3">
           {/* Business Switcher */}
           {userBusinesses.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  className="w-full justify-between data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                    <Building2 className="size-4" />
-                  </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{displayBusiness?.name || 'Select Business'}</span>
-                    <span className="truncate text-xs">{displayBusiness?.role || 'No Business'}</span>
-                  </div>
-                  <ChevronsUpDown className="ml-auto" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg" 
-                align="start"
-              >
-                <DropdownMenuLabel className="text-muted-foreground text-xs">
-                  Teams
-                </DropdownMenuLabel>
-                {userBusinesses.map((business, index) => (
-                  <DropdownMenuItem
-                    key={business.id}
-                    onClick={() => handleBusinessChange(business)}
-                    className={`gap-2 p-2 ${currentBusiness?.id === business.id ? 'bg-accent' : ''}`}
-                  >
-                    <div className="flex size-6 items-center justify-center rounded-md border">
-                      <Building2 className="size-3.5 shrink-0" />
-                    </div>
-                    {business.name}
-                    <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
-                  </DropdownMenuItem>
-                ))}
-                {canCreateBusiness && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      className="gap-2 p-2"
-                      onClick={() => window.location.href = '/businesses/create'}
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuButton
+                      size="lg"
+                      className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                     >
-                      <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                        <Plus className="size-4" />
+                      <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                        <Building2 className="size-4" />
                       </div>
-                      <div className="text-muted-foreground font-medium">Add team</div>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-medium">{displayBusiness?.name || 'Select Business'}</span>
+                        <span className="truncate text-xs">{displayBusiness?.role || 'No Business'}</span>
+                      </div>
+                      <ChevronsUpDown className="ml-auto" />
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                    align="start"
+                    side={isMobile ? "bottom" : "right"}
+                    sideOffset={4}
+                  >
+                    <DropdownMenuLabel className="text-muted-foreground text-xs">
+                      Teams
+                    </DropdownMenuLabel>
+                    {userBusinesses.map((business, index) => (
+                      <DropdownMenuItem
+                        key={business.id}
+                        onClick={() => handleBusinessChange(business)}
+                        className={`gap-2 p-2 ${currentBusiness?.id === business.id ? 'bg-accent' : ''}`}
+                      >
+                        <div className="flex size-6 items-center justify-center rounded-md border">
+                          <Building2 className="size-3.5 shrink-0" />
+                        </div>
+                        {business.name}
+                        <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                      </DropdownMenuItem>
+                    ))}
+                    {canCreateBusiness && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          className="gap-2 p-2"
+                          onClick={() => window.location.href = '/businesses/create'}
+                        >
+                          <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                            <Plus className="size-4" />
+                          </div>
+                          <div className="text-muted-foreground font-medium">Add team</div>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SidebarMenuItem>
+            </SidebarMenu>
           )}
         </div>
       </SidebarHeader>
