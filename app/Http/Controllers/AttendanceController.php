@@ -309,15 +309,15 @@ class AttendanceController extends Controller
         $user = auth()->user();
 
         try {
-            // Get today's attendance record
-            $attendance = Attendance::getTodayRecord($user->id, $business->id);
+            // Get the most recent incomplete attendance record (no end_time)
+            $attendance = Attendance::where('user_id', $user->id)
+                ->where('business_id', $business->id)
+                ->whereNull('end_time')
+                ->orderBy('start_time', 'desc')
+                ->first();
 
             if (!$attendance) {
-                return response()->json(['error' => 'No clock-in record found for today.'], 404);
-            }
-
-            if ($attendance->end_time) {
-                return response()->json(['error' => 'You have already clocked out today.'], 400);
+                return response()->json(['error' => 'No incomplete attendance record found. Please clock in first.'], 404);
             }
 
             // Calculate hours worked
