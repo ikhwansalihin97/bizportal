@@ -204,11 +204,22 @@ export default function AttendanceIndex({
   };
 
   const formatTotalHours = (attendance: Attendance) => {
-    if (!attendance.regular_units && !attendance.overtime_units) {
+    // Handle null/undefined values
+    const regularUnits = attendance.regular_units || 0;
+    const overtimeUnits = attendance.overtime_units || 0;
+    
+    // If both are 0, show --:--
+    if (regularUnits === 0 && overtimeUnits === 0) {
       return '--:--';
     }
     
-    const totalHours = (attendance.regular_units || 0) + (attendance.overtime_units || 0);
+    const totalHours = regularUnits + overtimeUnits;
+    
+    // Ensure we have valid numbers
+    if (isNaN(totalHours) || totalHours < 0) {
+      return '--:--';
+    }
+    
     const hours = Math.floor(totalHours);
     const minutes = Math.round((totalHours - hours) * 60);
     

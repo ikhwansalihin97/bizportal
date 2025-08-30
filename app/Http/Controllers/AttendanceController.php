@@ -308,12 +308,27 @@ class AttendanceController extends Controller
             // Calculate hours worked
             $endTime = Carbon::now();
             $startTime = Carbon::parse($attendance->start_time);
-            $regularUnits = $endTime->diffInHours($startTime) + ($endTime->diffInMinutes($startTime) % 60) / 60;
+            
+            if ($startTime < $endTime) {
+                $totalMinutes = $endTime->diffInMinutes($startTime);
+                $totalHours = $totalMinutes / 60;
+                
+                // Assuming 8 hours is regular time, anything over is overtime
+                $regularHours = min($totalHours, 8);
+                $overtimeHours = max(0, $totalHours - 8);
+                
+                $regularUnits = round($regularHours, 2);
+                $overtimeUnits = round($overtimeHours, 2);
+            } else {
+                $regularUnits = 0;
+                $overtimeUnits = 0;
+            }
 
             // Update attendance record
             $attendance->update([
                 'end_time' => $endTime,
                 'regular_units' => $regularUnits,
+                'overtime_units' => $overtimeUnits,
             ]);
 
             return back()->with('success', 'Successfully clocked out at ' . $endTime->format('H:i'));
