@@ -63,33 +63,56 @@ export default function AdminFeaturesIndex({ features }: AdminFeaturesIndexProps
         setSelectedCategory('all');
     }, []);
 
-    const handleFeatureToggle = useCallback(async (featureId: number, isActive: boolean) => {
-        setIsLoading(true);
+    const handleToggleFeature = async (featureId: number, isActive: boolean) => {
         try {
-            // TODO: Implement API call to toggle feature status
-            console.log(`Toggling feature ${featureId} to ${isActive}`);
+            const response = await fetch(`/admin/features/${featureId}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({ is_active: isActive }),
+            });
+
+            if (response.ok) {
+                // Refresh the page to show updated status
+                window.location.reload();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Failed to toggle feature');
+            }
         } catch (error) {
             console.error('Error toggling feature:', error);
-        } finally {
-            setIsLoading(false);
+            alert('Failed to toggle feature');
         }
-    }, []);
+    };
 
-    const handleDeleteFeature = useCallback(async (featureId: number) => {
+    const handleDeleteFeature = async (featureId: number) => {
         if (!confirm('Are you sure you want to delete this feature? This action cannot be undone.')) {
             return;
         }
 
-        setIsLoading(true);
         try {
-            // TODO: Implement API call to delete feature
-            console.log(`Deleting feature ${featureId}`);
+            const response = await fetch(`/admin/features/${featureId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+
+            if (response.ok) {
+                // Refresh the page to show updated list
+                window.location.reload();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Failed to delete feature');
+            }
         } catch (error) {
             console.error('Error deleting feature:', error);
-        } finally {
-            setIsLoading(false);
+            alert('Failed to delete feature');
         }
-    }, []);
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -306,7 +329,7 @@ export default function AdminFeaturesIndex({ features }: AdminFeaturesIndexProps
                                                     </Link>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem 
-                                                    onClick={() => handleFeatureToggle(feature.id, !feature.is_active)}
+                                                    onClick={() => handleToggleFeature(feature.id, !feature.is_active)}
                                                     disabled={isLoading}
                                                 >
                                                     <Settings className="mr-2 h-4 w-4" />

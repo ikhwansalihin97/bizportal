@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import {
   Home,
   Building2,
@@ -26,30 +26,14 @@ export function AppSidebar() {
   const isSuperAdmin = auth.roles?.includes('superadmin') || auth.user?.profile?.role === 'superadmin'
   const canCreateBusiness = isSuperAdmin || auth.permissions?.includes('business.create')
 
-  // Debug logging
-  console.log('Auth object:', auth)
-  console.log('User roles:', auth.roles)
-  console.log('User profile role:', auth.user?.profile?.role)
-  console.log('User permissions:', auth.permissions)
-  console.log('Is superadmin:', isSuperAdmin)
-  console.log('Can create business:', canCreateBusiness)
-
-  // Auto-select business if only one exists and no current business
-  React.useEffect(() => {
-    const currentPath = window.location.pathname
-    const isOnBusinessPage = currentPath.includes('/businesses/') && currentPath !== '/businesses/create'
-    
-    // Only auto-select if we have exactly one business and we're not on a business page
-    if (userBusinesses.length === 1 && !isOnBusinessPage) {
-      const business = userBusinesses[0]
-      
-      // Check if we're already on the right page
-      if (currentPath !== `/businesses/${business.slug}/dashboard`) {
-        console.log('Auto-selecting business:', business.name, 'redirecting to:', `/businesses/${business.slug}/dashboard`)
-        window.location.href = `/businesses/${business.slug}/dashboard`
-      }
+  // Auto-select business if user has only one
+  useEffect(() => {
+    if (userBusinesses.length === 1 && !currentBusiness) {
+      const business = userBusinesses[0];
+      // Redirect to the business dashboard
+      window.location.href = `/businesses/${business.slug}/dashboard`;
     }
-  }, [userBusinesses])
+  }, [userBusinesses, currentBusiness]);
 
   // Handle business change
   const handleBusinessChange = (business: any) => {

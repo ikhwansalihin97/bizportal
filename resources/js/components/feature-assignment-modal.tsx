@@ -107,25 +107,27 @@ export default function FeatureAssignmentModal({
 
             // Submit each changed assignment using fetch instead of Inertia router
             for (const [businessId, assignment] of changedAssignments) {
-                console.log(`Assigning feature ${feature.id} to business ${businessId} with enabled=${assignment.is_enabled}`);
                 try {
-                    // Use Inertia's router with proper CSRF handling
-                    await router.post(`/admin/features/${feature.id}/assign/${businessId}`, {
-                        is_enabled: assignment.is_enabled,
-                        settings: assignment.settings
-                    }, {
-                        preserveState: true,
-                        preserveScroll: true,
-                        onError: (errors) => {
-                            console.error('Assignment error:', errors);
-                            setError('Failed to update assignment. Please try again.');
+                    const response = await fetch(`/admin/features/${feature.id}/assign`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                         },
-                        onSuccess: () => {
-                            console.log('Assignment successful');
-                        }
+                        body: JSON.stringify({
+                            business_id: businessId,
+                            is_enabled: assignment.is_enabled,
+                        }),
                     });
+
+                    if (response.ok) {
+                        // Assignment successful
+                        onClose();
+                    } else {
+                        const data = await response.json();
+                        setError(data.errors?.general || 'Failed to assign feature. Please try again.');
+                    }
                 } catch (error) {
-                    console.error('Assignment error:', error);
                     setError('Failed to update assignment. Please try again.');
                     return;
                 }

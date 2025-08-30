@@ -71,13 +71,27 @@ export default function AdminFeaturesShow({ feature, businesses }: AdminFeatures
         { title: feature.name, href: `/admin/features/${feature.id}` },
     ];
 
-    const handleToggleFeature = async (businessId: number, isEnabled: boolean) => {
+    const handleToggleFeature = async () => {
         try {
-            await router.post(`/admin/features/${feature.id}/assign/${businessId}`, {
-                is_enabled: !isEnabled,
+            const response = await fetch(`/admin/features/${feature.id}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({ is_active: !feature.is_active }),
             });
+
+            if (response.ok) {
+                // Refresh the page to show updated status
+                window.location.reload();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Failed to toggle feature');
+            }
         } catch (error) {
             console.error('Error toggling feature:', error);
+            alert('Failed to toggle feature');
         }
     };
 

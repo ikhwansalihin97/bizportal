@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, X, Settings, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, X, Settings, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 
 interface BusinessFeature {
   id: number;
@@ -84,6 +84,16 @@ export default function FeaturesIndex({
     };
 
     return colors[category.toLowerCase() as keyof typeof colors] || colors.default;
+  };
+
+  const getStatusIcon = (feature: BusinessFeature) => {
+    if (feature.is_active && feature.is_enabled) {
+      return <CheckCircle className="h-5 w-5 text-green-600" />;
+    } else if (feature.is_enabled) {
+      return <AlertCircle className="h-5 w-5 text-orange-600" />;
+    } else {
+      return <XCircle className="h-5 w-5 text-red-600" />;
+    }
   };
 
   return (
