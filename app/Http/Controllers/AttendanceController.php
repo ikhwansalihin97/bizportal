@@ -309,9 +309,20 @@ class AttendanceController extends Controller
             $endTime = Carbon::now();
             $startTime = Carbon::parse($attendance->start_time);
             
+            \Log::info('Clock-out calculation:', [
+                'start_time' => $attendance->start_time,
+                'end_time' => $endTime->toISOString(),
+                'startTime_parsed' => $startTime->toISOString(),
+                'endTime_parsed' => $endTime->toISOString(),
+                'startTime < endTime' => $startTime < $endTime,
+            ]);
+            
             if ($startTime < $endTime) {
                 $totalMinutes = $endTime->diffInMinutes($startTime);
                 $totalHours = $totalMinutes / 60;
+                
+                // Ensure we have positive values
+                $totalHours = abs($totalHours);
                 
                 // Assuming 8 hours is regular time, anything over is overtime
                 $regularHours = min($totalHours, 8);
@@ -319,9 +330,20 @@ class AttendanceController extends Controller
                 
                 $regularUnits = round($regularHours, 2);
                 $overtimeUnits = round($overtimeHours, 2);
+                
+                \Log::info('Clock-out hours calculated:', [
+                    'totalMinutes' => $totalMinutes,
+                    'totalHours' => $totalHours,
+                    'regularHours' => $regularHours,
+                    'overtimeHours' => $overtimeHours,
+                    'regularUnits' => $regularUnits,
+                    'overtimeUnits' => $overtimeUnits,
+                ]);
             } else {
                 $regularUnits = 0;
                 $overtimeUnits = 0;
+                
+                \Log::info('Clock-out: Invalid time range - start time is after end time');
             }
 
             // Update attendance record
