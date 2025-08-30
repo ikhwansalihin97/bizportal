@@ -419,84 +419,93 @@ export default function AttendanceIndex({
             </CardContent>
           </Card>
 
-          {/* Today's Attendance */}
+          {/* Recent Attendance */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Today's Attendance ({format(new Date(), 'EEEE, MMMM d, yyyy')})
+                Recent Attendance (Last 7 Days)
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {todayAttendance.length > 0 ? (
-                <div className="space-y-3">
-                  {todayAttendance.map((attendance) => (
-                    <div key={attendance.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg gap-3">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <Avatar>
-                          <AvatarFallback>
-                            {getInitials(attendance.user.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-medium truncate">{attendance.user.name}</div>
-                          <div className="text-sm text-muted-foreground truncate">{attendance.user.email}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 min-w-0">
-                        <div className="grid grid-cols-3 gap-4 text-center">
-                          <div>
-                            <div className="text-sm text-muted-foreground">In</div>
-                            <div className="font-mono text-sm">{formatTime(attendance.start_time)}</div>
-                          </div>
-                          <div>
-                            <div className="text-sm text-muted-foreground">Out</div>
-                            <div className="font-mono text-sm">{formatTime(attendance.end_time)}</div>
-                          </div>
-                          <div>
-                            <div className="text-sm text-muted-foreground">Hours</div>
-                            <div className="font-mono text-sm">
-                              {formatTotalHours(attendance)}
+              {recentAttendance && Object.keys(recentAttendance).length > 0 ? (
+                <div className="space-y-4">
+                  {Object.entries(recentAttendance).map(([date, attendances]) => (
+                    <div key={date} className="border-b pb-4 last:border-b-0">
+                      <h4 className="font-medium text-sm text-muted-foreground mb-3">
+                        {format(new Date(date), 'EEEE, MMMM d, yyyy')}
+                      </h4>
+                      <div className="space-y-3">
+                        {attendances.map((attendance) => (
+                          <div key={attendance.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg gap-3">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <Avatar>
+                                <AvatarFallback>
+                                  {getInitials(attendance.user.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium truncate">{attendance.user.name}</div>
+                                <div className="text-sm text-muted-foreground truncate">{attendance.user.email}</div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 min-w-0">
+                              <div className="grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                  <div className="text-sm text-muted-foreground">In</div>
+                                  <div className="font-mono text-sm">{formatTime(attendance.start_time)}</div>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-muted-foreground">Out</div>
+                                  <div className="font-mono text-sm">{formatTime(attendance.end_time)}</div>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-muted-foreground">Hours</div>
+                                  <div className="font-mono text-sm">
+                                    {formatTotalHours(attendance)}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                {getStatusIcon(attendance.status)}
+                                {getStatusBadge(attendance.status)}
+                              </div>
+                              
+                              {/* Action buttons for managers, superadmins, users with permissions, or users editing their own records */}
+                              {(canManage || 
+                                auth.permissions?.includes('attendance.edit') || 
+                                auth.permissions?.includes('attendance.delete') ||
+                                attendance.user_id === auth.user?.id) && (
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {(canManage || 
+                                    auth.permissions?.includes('attendance.edit') ||
+                                    attendance.user_id === auth.user?.id) && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleEditAttendance(attendance)}
+                                      className="h-8 px-2"
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                  {(canManage || auth.permissions?.includes('attendance.delete')) && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDeleteAttendance(attendance)}
+                                      className="h-8 px-2 text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(attendance.status)}
-                          {getStatusBadge(attendance.status)}
-                        </div>
-                        
-                        {/* Action buttons for managers, superadmins, users with permissions, or users editing their own records */}
-                        {(canManage || 
-                          auth.permissions?.includes('attendance.edit') || 
-                          auth.permissions?.includes('attendance.delete') ||
-                          attendance.user_id === auth.user?.id) && (
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {(canManage || 
-                              auth.permissions?.includes('attendance.edit') ||
-                              attendance.user_id === auth.user?.id) && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditAttendance(attendance)}
-                                className="h-8 px-2"
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                            )}
-                            {(canManage || auth.permissions?.includes('attendance.delete')) && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteAttendance(attendance)}
-                                className="h-8 px-2 text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </div>
-                        )}
+                        ))}
                       </div>
                     </div>
                   ))}
@@ -504,9 +513,9 @@ export default function AttendanceIndex({
               ) : (
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Attendance Records Today</h3>
+                  <h3 className="text-lg font-semibold mb-2">No Recent Attendance Records</h3>
                   <p className="text-muted-foreground">
-                    No one has clocked in yet today
+                    No attendance records found in the last 7 days
                   </p>
                 </div>
               )}
