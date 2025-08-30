@@ -20,6 +20,9 @@ export function AppSidebar() {
   // Get user's businesses
   const userBusinesses = auth.businesses || []
 
+  // Check if user can create businesses
+  const canCreateBusiness = auth.roles?.includes('superadmin') || auth.permissions?.includes('business.create')
+
   // Auto-select business if only one exists and no current business
   React.useEffect(() => {
     const currentPath = window.location.pathname
@@ -143,10 +146,12 @@ export function AppSidebar() {
                     </div>
                   </DropdownMenuItem>
                 ))}
-                <DropdownMenuItem onClick={() => window.location.href = '/businesses/create'}>
-                  <Plus className="h-4 w-4" />
-                  Create Business
-                </DropdownMenuItem>
+                {canCreateBusiness && (
+                  <DropdownMenuItem onClick={() => window.location.href = '/businesses/create'}>
+                    <Plus className="h-4 w-4" />
+                    Create Business
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
