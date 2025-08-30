@@ -21,6 +21,15 @@ class AttendanceController extends Controller
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
         $canManage = in_array($userRole, ['owner']) || $user->hasRole('superadmin');
         
+        // Check if user can view attendance (superadmin, business member, or has attendance.view permission)
+        $canView = $user->hasRole('superadmin') || 
+                   $business->users()->where('user_id', $user->id)->exists() || 
+                   $user->can('attendance.view');
+        
+        if (!$canView) {
+            abort(403, 'Unauthorized to view attendance records.');
+        }
+        
         // Superadmins are always considered business members
         $isBusinessMember = $user->hasRole('superadmin') || $business->users()->where('user_id', $user->id)->exists();
 
@@ -60,6 +69,15 @@ class AttendanceController extends Controller
         $user = auth()->user();
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
         $canManage = in_array($userRole, ['owner']) || $user->hasRole('superadmin');
+        
+        // Check if user can view attendance reports
+        $canView = $user->hasRole('superadmin') || 
+                   $business->users()->where('user_id', $user->id)->exists() || 
+                   $user->can('attendance.view');
+        
+        if (!$canView) {
+            abort(403, 'Unauthorized to view attendance reports.');
+        }
         
         // Superadmins are always considered business members
         $isBusinessMember = $user->hasRole('superadmin') || $business->users()->where('user_id', $user->id)->exists();
@@ -329,7 +347,7 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Update attendance record (for managers).
+     * Update attendance record (for managers and users with attendance.edit permission).
      */
     public function update(Request $request, Business $business, Attendance $attendance)
     {
@@ -341,7 +359,7 @@ class AttendanceController extends Controller
         } else {
             // Check business role for non-superadmins
             $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
-            $canManage = in_array($userRole, ['owner']);
+            $canManage = in_array($userRole, ['owner']) || $user->can('attendance.edit');
         }
 
         if (!$canManage) {
@@ -363,7 +381,7 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Delete attendance record (for managers).
+     * Delete attendance record (for managers and users with attendance.delete permission).
      */
     public function destroy(Business $business, Attendance $attendance)
     {
@@ -375,7 +393,7 @@ class AttendanceController extends Controller
         } else {
             // Check business role for non-superadmins
             $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
-            $canManage = in_array($userRole, ['owner']);
+            $canManage = in_array($userRole, ['owner']) || $user->can('attendance.delete');
         }
 
         if (!$canManage) {

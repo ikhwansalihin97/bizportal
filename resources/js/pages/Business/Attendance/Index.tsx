@@ -411,24 +411,28 @@ export default function AttendanceIndex({
                         </div>
                         
                         {/* Action buttons for managers and superadmins */}
-                        {canManage && (
+                        {(canManage || auth.permissions?.includes('attendance.edit') || auth.permissions?.includes('attendance.delete')) && (
                           <div className="flex items-center gap-2 ml-4">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditAttendance(attendance)}
-                              className="h-8 px-2"
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteAttendance(attendance)}
-                              className="h-8 px-2 text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            {(canManage || auth.permissions?.includes('attendance.edit')) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditAttendance(attendance)}
+                                className="h-8 px-2"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            )}
+                            {(canManage || auth.permissions?.includes('attendance.delete')) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteAttendance(attendance)}
+                                className="h-8 px-2 text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         )}
                       </div>
