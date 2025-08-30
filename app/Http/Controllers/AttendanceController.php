@@ -33,7 +33,21 @@ class AttendanceController extends Controller
         // Superadmins are always considered business members
         $isBusinessMember = $user->hasRole('superadmin') || $business->users()->where('user_id', $user->id)->exists();
 
-        // Get today's attendance for the business
+        // Get recent attendance for the last 7 days
+        $recentAttendance = Attendance::where('business_id', $business->id)
+            ->whereBetween('work_date', [
+                Carbon::now()->subDays(6)->startOfDay(),
+                Carbon::now()->endOfDay()
+            ])
+            ->with(['user'])
+            ->orderBy('work_date', 'desc')
+            ->orderBy('start_time', 'desc')
+            ->get()
+            ->groupBy(function ($attendance) {
+                return $attendance->work_date->format('Y-m-d');
+            });
+
+        // Get today's attendance for stats
         $todayAttendance = Attendance::where('business_id', $business->id)
             ->where('work_date', Carbon::today())
             ->with(['user'])
@@ -53,6 +67,7 @@ class AttendanceController extends Controller
         return Inertia::render('Business/Attendance/Index', [
             'business' => $business,
             'isBusinessMember' => $isBusinessMember,
+            'recentAttendance' => $recentAttendance,
             'todayAttendance' => $todayAttendance,
             'currentUserAttendance' => $currentUserAttendance,
             'stats' => $stats,
