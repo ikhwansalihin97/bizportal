@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Clock, Users, Calendar, TrendingUp, User, CheckCircle, XCircle, AlertCircle, Hourglass, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { usePage } from '@inertiajs/react';
+import { SharedData } from '@/types';
 
 interface Attendance {
   id: number;
@@ -63,6 +65,7 @@ export default function AttendanceIndex({
   userRole,
   canManage,
 }: Props) {
+  const { auth } = usePage<SharedData>().props;
   const [isClockingIn, setIsClockingIn] = useState(false);
   const [isClockingOut, setIsClockingOut] = useState(false);
   const [clockOutNotes, setClockOutNotes] = useState('');
@@ -377,34 +380,37 @@ export default function AttendanceIndex({
               {todayAttendance.length > 0 ? (
                 <div className="space-y-3">
                   {todayAttendance.map((attendance) => (
-                    <div key={attendance.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
+                    <div key={attendance.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         <Avatar>
                           <AvatarFallback>
                             {getInitials(attendance.user.name)}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <div className="font-medium">{attendance.user.name}</div>
-                          <div className="text-sm text-muted-foreground">{attendance.user.email}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium truncate">{attendance.user.name}</div>
+                          <div className="text-sm text-muted-foreground truncate">{attendance.user.email}</div>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-4">
-                        <div className="text-center">
-                          <div className="text-sm text-muted-foreground">In</div>
-                          <div className="font-mono">{formatTime(attendance.start_time)}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-sm text-muted-foreground">Out</div>
-                          <div className="font-mono">{formatTime(attendance.end_time)}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-sm text-muted-foreground">Hours</div>
-                          <div className="font-mono">
-                            {attendance.total_hours_formatted}
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 min-w-0">
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                          <div>
+                            <div className="text-sm text-muted-foreground">In</div>
+                            <div className="font-mono text-sm">{formatTime(attendance.start_time)}</div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-muted-foreground">Out</div>
+                            <div className="font-mono text-sm">{formatTime(attendance.end_time)}</div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-muted-foreground">Hours</div>
+                            <div className="font-mono text-sm">
+                              {attendance.total_hours_formatted}
+                            </div>
                           </div>
                         </div>
+                        
                         <div className="flex items-center gap-2">
                           {getStatusIcon(attendance.status)}
                           {getStatusBadge(attendance.status)}
@@ -412,7 +418,7 @@ export default function AttendanceIndex({
                         
                         {/* Action buttons for managers and superadmins */}
                         {(canManage || auth.permissions?.includes('attendance.edit') || auth.permissions?.includes('attendance.delete')) && (
-                          <div className="flex items-center gap-2 ml-4">
+                          <div className="flex items-center gap-2 flex-shrink-0">
                             {(canManage || auth.permissions?.includes('attendance.edit')) && (
                               <Button
                                 variant="outline"
