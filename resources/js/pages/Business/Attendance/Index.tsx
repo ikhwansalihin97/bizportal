@@ -213,9 +213,9 @@ export default function AttendanceIndex({
       overtime_type: typeof attendance.overtime_units
     });
     
-    // Handle null/undefined values
-    const regularUnits = attendance.regular_units || 0;
-    const overtimeUnits = attendance.overtime_units || 0;
+    // Convert string values to numbers and handle null/undefined values
+    const regularUnits = parseFloat(attendance.regular_units as string) || 0;
+    const overtimeUnits = parseFloat(attendance.overtime_units as string) || 0;
     
     // If both are 0, show --:--
     if (regularUnits === 0 && overtimeUnits === 0) {

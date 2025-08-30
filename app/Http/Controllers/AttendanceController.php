@@ -443,8 +443,12 @@ class AttendanceController extends Controller
             ]);
             
             if ($startTime < $endTime) {
+                // Use the correct order: endTime->diffInMinutes(startTime) gives positive value
                 $totalMinutes = $endTime->diffInMinutes($startTime);
                 $totalHours = $totalMinutes / 60;
+                
+                // Ensure we have positive values
+                $totalHours = abs($totalHours);
                 
                 // Assuming 8 hours is regular time, anything over is overtime
                 $regularHours = min($totalHours, 8);
