@@ -20,6 +20,9 @@ class AttendanceController extends Controller
         $user = auth()->user();
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
         $canManage = in_array($userRole, ['owner']) || $user->hasRole('superadmin');
+        
+        // Superadmins are always considered business members
+        $isBusinessMember = $user->hasRole('superadmin') || $business->users()->where('user_id', $user->id)->exists();
 
         // Get today's attendance for the business
         $todayAttendance = Attendance::where('business_id', $business->id)
@@ -40,6 +43,7 @@ class AttendanceController extends Controller
 
         return Inertia::render('Business/Attendance/Index', [
             'business' => $business,
+            'isBusinessMember' => $isBusinessMember,
             'todayAttendance' => $todayAttendance,
             'currentUserAttendance' => $currentUserAttendance,
             'stats' => $stats,
@@ -56,6 +60,9 @@ class AttendanceController extends Controller
         $user = auth()->user();
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
         $canManage = in_array($userRole, ['owner']) || $user->hasRole('superadmin');
+        
+        // Superadmins are always considered business members
+        $isBusinessMember = $user->hasRole('superadmin') || $business->users()->where('user_id', $user->id)->exists();
 
         // Get filter parameters
         $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
@@ -104,6 +111,7 @@ class AttendanceController extends Controller
 
         return Inertia::render('Business/Attendance/Report', [
             'business' => $business,
+            'isBusinessMember' => $isBusinessMember,
             'attendance' => $attendance,
             'summary' => $summary,
             'filters' => [

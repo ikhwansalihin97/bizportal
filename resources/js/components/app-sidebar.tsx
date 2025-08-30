@@ -75,25 +75,35 @@ export function AppSidebar() {
   ]
 
   if (displayBusiness) {
+    const businessItems = [
+      {
+        title: 'Users',
+        url: `/businesses/${displayBusiness.slug}/users`,
+      },
+    ]
+
+    // Only show Settings if user has business-edit permission or is superadmin
+    if (isSuperAdmin || auth.permissions?.includes('business-edit')) {
+      businessItems.push({
+        title: 'Settings',
+        url: `/businesses/${displayBusiness.slug}/edit`,
+      })
+    }
+
+    // Add Attendance navigation if business has attendance feature enabled
+    if (displayBusiness.features?.some(feature => feature.slug === 'attendance' && feature.pivot?.is_enabled)) {
+      businessItems.push({
+        title: 'Attendance',
+        url: `/businesses/${displayBusiness.slug}/attendance`,
+      })
+    }
+
     navigationItems.push(
       {
         title: 'Business',
         url: `/businesses/${displayBusiness.slug}/dashboard`,
         icon: 'Building2',
-        items: [
-          {
-            title: 'Dashboard',
-            url: `/businesses/${displayBusiness.slug}/dashboard`,
-          },
-          {
-            title: 'Users',
-            url: `/businesses/${displayBusiness.slug}/users`,
-          },
-          {
-            title: 'Settings',
-            url: `/businesses/${displayBusiness.slug}/edit`,
-          },
-        ],
+        items: businessItems,
       }
     )
   }
@@ -125,7 +135,7 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="p-6 space-y-4">
+        <div className="p-2 space-y-1">
           {/* Business Switcher */}
           {userBusinesses.length > 0 && (
             <SidebarMenu>
@@ -134,10 +144,10 @@ export function AppSidebar() {
                   <DropdownMenuTrigger asChild>
                     <SidebarMenuButton
                       size="lg"
-                      className="w-full h-12 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                      className="w-full h-10 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                     >
-                      <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg">
-                        <Building2 className="size-5" />
+                      <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                        <Building2 className="size-4" />
                       </div>
                       <div className="grid flex-1 text-left text-sm leading-tight ml-3">
                         <span className="truncate font-medium">{displayBusiness?.name || 'Select Business'}</span>
@@ -147,7 +157,7 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
-                    className="w-[--radix-dropdown-menu-trigger-width] min-w-64 rounded-lg"
+                    className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                     align="start"
                     side={isMobile ? "bottom" : "right"}
                     sideOffset={4}
@@ -159,10 +169,10 @@ export function AppSidebar() {
                       <DropdownMenuItem
                         key={business.id}
                         onClick={() => handleBusinessChange(business)}
-                        className={`gap-3 p-3 ${currentBusiness?.id === business.id ? 'bg-accent' : ''}`}
+                        className={`gap-2 p-2 ${currentBusiness?.id === business.id ? 'bg-accent' : ''}`}
                       >
-                        <div className="flex size-8 items-center justify-center rounded-md border">
-                          <Building2 className="size-4 shrink-0" />
+                        <div className="flex size-6 items-center justify-center rounded-md border">
+                          <Building2 className="size-3.5 shrink-0" />
                         </div>
                         <div className="flex-1">
                           <div className="font-medium">{business.name}</div>
@@ -175,10 +185,10 @@ export function AppSidebar() {
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
-                          className="gap-3 p-3"
+                          className="gap-2 p-2"
                           onClick={() => window.location.href = '/businesses/create'}
                         >
-                          <div className="flex size-8 items-center justify-center rounded-md border bg-transparent">
+                          <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                             <Plus className="size-4" />
                           </div>
                           <div className="flex-1">
