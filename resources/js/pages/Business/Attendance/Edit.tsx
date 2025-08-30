@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Clock, User, Calculator } from 'lucide-react';
-import { format, differenceInMinutes, parseISO } from 'date-fns';
+import { format, differenceInMinutes, parseISO, formatInTimeZone } from 'date-fns-tz';
 
 interface Attendance {
   id: number;
@@ -54,9 +54,46 @@ export default function AttendanceEdit({
     total: 0
   });
 
+  // Helper function to format datetime for datetime-local input
+  const formatDateTimeForInput = (dateTimeString: string | null) => {
+    if (!dateTimeString) return '';
+    
+    // Parse the UTC datetime from database and convert to local timezone
+    const utcDate = new Date(dateTimeString);
+    
+    // Get local timezone offset
+    const localOffset = utcDate.getTimezoneOffset() * 60000;
+    
+    // Convert to local time
+    const localDate = new Date(utcDate.getTime() - localOffset);
+    
+    // Format for datetime-local input (YYYY-MM-DDTHH:mm)
+    return localDate.toISOString().slice(0, 16);
+  };
+
+  // Helper function to format time for display (respecting timezone)
+  const formatTimeForDisplay = (dateTimeString: string | null) => {
+    if (!dateTimeString) return 'Not set';
+    
+    const utcDate = new Date(dateTimeString);
+    const localOffset = utcDate.getTimezoneOffset() * 60000;
+    const localDate = new Date(utcDate.getTime() - localOffset);
+    
+    return format(localDate, 'HH:mm');
+  };
+
+  // Helper function to format date for display (respecting timezone)
+  const formatDateForDisplay = (dateString: string) => {
+    const utcDate = new Date(dateString);
+    const localOffset = utcDate.getTimezoneOffset() * 60000;
+    const localDate = new Date(utcDate.getTime() - localOffset);
+    
+    return format(localDate, 'MMM dd, yyyy');
+  };
+
   const { data, setData, put, processing, errors } = useForm({
-    start_time: attendance.start_time ? format(new Date(attendance.start_time), 'yyyy-MM-dd\'T\'HH:mm') : '',
-    end_time: attendance.end_time ? format(new Date(attendance.end_time), 'yyyy-MM-dd\'T\'HH:mm') : '',
+    start_time: formatDateTimeForInput(attendance.start_time),
+    end_time: formatDateTimeForInput(attendance.end_time),
     notes: attendance.notes || '',
     status: attendance.status,
   });
@@ -94,11 +131,6 @@ export default function AttendanceEdit({
     // Submit the form with start_time, end_time, notes, and status
     // Hours will be calculated automatically on the backend
     put(`/businesses/${business.slug}/attendance/records/${attendance.uuid}`);
-  };
-
-  const formatTime = (time: string | null) => {
-    if (!time) return 'Not set';
-    return format(new Date(time), 'HH:mm');
   };
 
   const getStatusBadge = (status: string) => {
@@ -274,15 +306,15 @@ export default function AttendanceEdit({
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Date:</span>
-                    <span className="font-medium">{format(new Date(attendance.work_date), 'MMM dd, yyyy')}</span>
+                    <span className="font-medium">{formatDateForDisplay(attendance.work_date)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Start Time:</span>
-                    <span className="font-medium">{formatTime(attendance.start_time)}</span>
+                    <span className="font-medium">{formatTimeForDisplay(attendance.start_time)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">End Time:</span>
-                    <span className="font-medium">{formatTime(attendance.end_time)}</span>
+                    <span className="font-medium">{formatTimeForDisplay(attendance.end_time)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Status:</span>
