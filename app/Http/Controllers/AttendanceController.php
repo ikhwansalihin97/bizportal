@@ -435,13 +435,6 @@ class AttendanceController extends Controller
             $startTime = \Carbon\Carbon::parse($validated['start_time']);
             $endTime = \Carbon\Carbon::parse($validated['end_time']);
             
-            \Log::info('Attendance update calculation:', [
-                'start_time' => $validated['start_time'],
-                'end_time' => $validated['end_time'],
-                'startTime_parsed' => $startTime->toISOString(),
-                'endTime_parsed' => $endTime->toISOString(),
-            ]);
-            
             if ($startTime < $endTime) {
                 // Use the correct order: endTime->diffInMinutes(startTime) gives positive value
                 $totalMinutes = $endTime->diffInMinutes($startTime);
@@ -456,27 +449,14 @@ class AttendanceController extends Controller
                 
                 $validated['regular_units'] = round($regularHours, 2);
                 $validated['overtime_units'] = round($overtimeHours, 2);
-                
-                \Log::info('Hours calculated:', [
-                    'totalMinutes' => $totalMinutes,
-                    'totalHours' => $totalHours,
-                    'regularHours' => $regularHours,
-                    'overtimeHours' => $overtimeHours,
-                    'regular_units' => $validated['regular_units'],
-                    'overtime_units' => $validated['overtime_units'],
-                ]);
             } else {
                 $validated['regular_units'] = 0;
                 $validated['overtime_units'] = 0;
-                
-                \Log::info('Invalid time range - resetting hours to 0');
             }
         } else {
             // If times are not provided, reset hours
             $validated['regular_units'] = 0;
             $validated['overtime_units'] = 0;
-            
-            \Log::info('No times provided - resetting hours to 0');
         }
 
         $attendance->update($validated);

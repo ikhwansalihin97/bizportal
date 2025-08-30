@@ -204,15 +204,6 @@ export default function AttendanceIndex({
   };
 
   const formatTotalHours = (attendance: Attendance) => {
-    // Debug logging
-    console.log('formatTotalHours debug:', {
-      attendance_id: attendance.id,
-      regular_units: attendance.regular_units,
-      overtime_units: attendance.overtime_units,
-      regular_type: typeof attendance.regular_units,
-      overtime_type: typeof attendance.overtime_units
-    });
-    
     // Convert string values to numbers and handle null/undefined values
     const regularUnits = parseFloat(attendance.regular_units as string) || 0;
     const overtimeUnits = parseFloat(attendance.overtime_units as string) || 0;
