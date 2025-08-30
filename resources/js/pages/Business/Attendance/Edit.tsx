@@ -58,41 +58,24 @@ export default function AttendanceEdit({
   const formatDateTimeForInput = (dateTimeString: string | null) => {
     if (!dateTimeString) return '';
     
-    // Parse the UTC datetime from database and convert to local timezone
-    const utcDate = new Date(dateTimeString);
-    
-    // Format for datetime-local input (YYYY-MM-DDTHH:mm)
-    // The input will automatically handle timezone conversion
-    return utcDate.toISOString().slice(0, 16);
+    // Parse the datetime and format for datetime-local input
+    // Since we're storing in Malaysia timezone, just format directly
+    const date = new Date(dateTimeString);
+    return date.toISOString().slice(0, 16);
   };
 
-  // Helper function to format time for display (showing actual UTC times as stored)
+  // Helper function to format time for display (showing database values directly)
   const formatTimeForDisplay = (dateTimeString: string | null) => {
     if (!dateTimeString) return 'Not set';
     
-    // Parse the UTC datetime and show the actual UTC time without conversion
+    // Parse the datetime and show as stored in database (Malaysia time)
     const date = new Date(dateTimeString);
-    
-    // Get UTC components to avoid timezone conversion
-    const utcYear = date.getUTCFullYear();
-    const utcMonth = date.getUTCMonth();
-    const utcDay = date.getUTCDate();
-    const utcHours = date.getUTCHours();
-    const utcMinutes = date.getUTCMinutes();
-    
-    // Format as "MMM dd, HH:mm UTC"
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const month = monthNames[utcMonth];
-    const day = utcDay.toString().padStart(2, '0');
-    const hours = utcHours.toString().padStart(2, '0');
-    const minutes = utcMinutes.toString().padStart(2, '0');
-    
-    return `${month} ${day}, ${hours}:${minutes} UTC`;
+    return format(date, 'MMM dd, HH:mm');
   };
 
   // Helper function to format date for display (work date)
   const formatDateForDisplay = (dateString: string) => {
-    // Parse the date and display as is
+    // Parse the date and display as stored
     const date = new Date(dateString);
     return format(date, 'MMM dd, yyyy');
   };

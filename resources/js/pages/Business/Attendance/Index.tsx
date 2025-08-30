@@ -189,18 +189,9 @@ export default function AttendanceIndex({
   const formatTime = (time: string | null) => {
     if (!time) return '--:--';
     
-    // Parse the UTC datetime and show the actual UTC time without conversion
+    // Parse the datetime and show as stored in database (Malaysia time)
     const date = new Date(time);
-    
-    // Get UTC components to avoid timezone conversion
-    const utcHours = date.getUTCHours();
-    const utcMinutes = date.getUTCMinutes();
-    
-    // Format as "HH:mm UTC"
-    const hours = utcHours.toString().padStart(2, '0');
-    const minutes = utcMinutes.toString().padStart(2, '0');
-    
-    return `${hours}:${minutes} UTC`;
+    return format(date, 'HH:mm');
   };
 
   const formatTotalHours = (attendance: Attendance) => {
