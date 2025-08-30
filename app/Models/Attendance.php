@@ -105,11 +105,11 @@ class Attendance extends Model
     }
 
     /**
-     * Scope to get today's attendance.
+     * Scope to get today's attendance records.
      */
     public function scopeToday($query)
     {
-        return $query->where('work_date', Carbon::today());
+        return $query->where('work_date', Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->toDateString());
     }
 
     /**
@@ -124,13 +124,13 @@ class Attendance extends Model
     }
 
     /**
-     * Scope to get this month's attendance.
+     * Scope to get this month's attendance records.
      */
     public function scopeThisMonth($query)
     {
         return $query->whereBetween('work_date', [
-            Carbon::now()->startOfMonth(),
-            Carbon::now()->endOfMonth()
+            Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->startOfMonth(),
+            Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->endOfMonth()
         ]);
     }
 
@@ -141,7 +141,7 @@ class Attendance extends Model
     {
         return static::where('user_id', $userId)
             ->where('business_id', $businessId)
-            ->where('work_date', Carbon::today())
+            ->where('work_date', Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->toDateString())
             ->whereNotNull('start_time')
             ->exists();
     }
@@ -153,7 +153,7 @@ class Attendance extends Model
     {
         return static::where('user_id', $userId)
             ->where('business_id', $businessId)
-            ->where('work_date', Carbon::today())
+            ->where('work_date', Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->toDateString())
             ->whereNotNull('end_time')
             ->exists();
     }
@@ -165,7 +165,7 @@ class Attendance extends Model
     {
         return static::where('user_id', $userId)
             ->where('business_id', $businessId)
-            ->where('work_date', Carbon::today())
+            ->where('work_date', Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->toDateString())
             ->first();
     }
 

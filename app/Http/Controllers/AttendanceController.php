@@ -49,7 +49,7 @@ class AttendanceController extends Controller
 
         // Get today's attendance for stats
         $todayAttendance = Attendance::where('business_id', $business->id)
-            ->where('work_date', Carbon::today())
+            ->where('work_date', Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->toDateString())
             ->with(['user'])
             ->get();
 
@@ -241,7 +241,7 @@ class AttendanceController extends Controller
                 'user_id' => $user->id,
                 'business_id' => $business->id,
                 'salary_rate_id' => $salaryRate?->id,
-                'work_date' => Carbon::today(),
+                'work_date' => Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->toDateString(),
                 'start_time' => Carbon::now(),
                 'status' => 'pending',
             ];
