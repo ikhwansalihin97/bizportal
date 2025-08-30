@@ -25,14 +25,17 @@ export function AppSidebar() {
     const currentPath = window.location.pathname
     const isOnBusinessPage = currentPath.includes('/businesses/') && currentPath !== '/businesses/create'
     
-    if (userBusinesses.length === 1 && !currentBusiness && !isOnBusinessPage) {
+    // Only auto-select if we have exactly one business and we're not on a business page
+    if (userBusinesses.length === 1 && !isOnBusinessPage) {
       const business = userBusinesses[0]
-      // Only redirect if we're not already on the right page
+      
+      // Check if we're already on the right page
       if (currentPath !== `/businesses/${business.slug}/dashboard`) {
+        console.log('Auto-selecting business:', business.name, 'redirecting to:', `/businesses/${business.slug}/dashboard`)
         window.location.href = `/businesses/${business.slug}/dashboard`
       }
     }
-  }, [userBusinesses, currentBusiness])
+  }, [userBusinesses])
 
   // Handle business change
   const handleBusinessChange = (business: any) => {
@@ -40,6 +43,9 @@ export function AppSidebar() {
       window.location.href = `/businesses/${business.slug}/dashboard`
     }
   }
+
+  // Determine which business to display in the switcher
+  const displayBusiness = currentBusiness || userBusinesses[0]
 
   const navigationItems = [
     {
@@ -55,24 +61,24 @@ export function AppSidebar() {
     },
   ]
 
-  if (currentBusiness) {
+  if (displayBusiness) {
     navigationItems.push(
       {
         title: 'Business',
-        url: `/businesses/${currentBusiness.slug}/dashboard`,
+        url: `/businesses/${displayBusiness.slug}/dashboard`,
         icon: 'Building2',
         items: [
           {
             title: 'Dashboard',
-            url: `/businesses/${currentBusiness.slug}/dashboard`,
+            url: `/businesses/${displayBusiness.slug}/dashboard`,
           },
           {
             title: 'Users',
-            url: `/businesses/${currentBusiness.slug}/users`,
+            url: `/businesses/${displayBusiness.slug}/users`,
           },
           {
             title: 'Settings',
-            url: `/businesses/${currentBusiness.slug}/edit`,
+            url: `/businesses/${displayBusiness.slug}/edit`,
           },
         ],
       }
@@ -115,7 +121,7 @@ export function AppSidebar() {
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4" />
                     <span className="truncate">
-                      {currentBusiness?.name || 'Select Business'}
+                      {displayBusiness?.name || 'Select Business'}
                     </span>
                   </div>
                   <ChevronsUpDown className="h-4 w-4" />
