@@ -66,18 +66,18 @@ export default function AttendanceEdit({
     return utcDate.toISOString().slice(0, 16);
   };
 
-  // Helper function to format time for display (respecting timezone)
+  // Helper function to format time for display (showing actual dates and times)
   const formatTimeForDisplay = (dateTimeString: string | null) => {
     if (!dateTimeString) return 'Not set';
     
-    // Parse the UTC datetime and display in local time
+    // Parse the datetime and show the actual date and time
     const date = new Date(dateTimeString);
-    return format(date, 'HH:mm');
+    return format(date, 'MMM dd, HH:mm');
   };
 
-  // Helper function to format date for display (respecting timezone)
+  // Helper function to format date for display (work date)
   const formatDateForDisplay = (dateString: string) => {
-    // Parse the date and display in local time
+    // Parse the date and display as is
     const date = new Date(dateString);
     return format(date, 'MMM dd, yyyy');
   };
@@ -301,21 +301,11 @@ export default function AttendanceEdit({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Start Time:</span>
-                    <span className="font-medium">
-                      {formatTimeForDisplay(attendance.start_time)}
-                      <span className="text-xs text-gray-500 ml-2">
-                        (raw: {attendance.start_time})
-                      </span>
-                    </span>
+                    <span className="font-medium">{formatTimeForDisplay(attendance.start_time)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">End Time:</span>
-                    <span className="font-medium">
-                      {formatTimeForDisplay(attendance.end_time)}
-                      <span className="text-xs text-gray-500 ml-2">
-                        (raw: {attendance.end_time})
-                      </span>
-                    </span>
+                    <span className="font-medium">{formatTimeForDisplay(attendance.end_time)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Status:</span>
