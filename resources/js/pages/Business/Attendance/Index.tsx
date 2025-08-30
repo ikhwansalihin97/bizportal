@@ -448,6 +448,18 @@ export default function AttendanceIndex({
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Always show Clock In button */}
+              <div className="mb-6">
+                <Button 
+                  onClick={handleClockIn}
+                  disabled={isClockingIn}
+                  size="lg"
+                  className="w-full md:w-auto"
+                >
+                  {isClockingIn ? 'Clocking In...' : 'Clock In'}
+                </Button>
+              </div>
+
               {recentAttendance && Object.keys(recentAttendance).length > 0 ? (
                 <div className="space-y-4">
                   {/* Show user's recent attendance records */}
@@ -526,15 +538,8 @@ export default function AttendanceIndex({
                   <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Recent Attendance Records</h3>
                   <p className="text-muted-foreground mb-4">
-                    Click the button below to start your work day
+                    Use the Clock In button above to start your work day
                   </p>
-                  <Button 
-                    onClick={handleClockIn}
-                    disabled={isClockingIn}
-                    size="lg"
-                  >
-                    {isClockingIn ? 'Clocking In...' : 'Clock In'}
-                  </Button>
                 </div>
               )}
             </CardContent>
