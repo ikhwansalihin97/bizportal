@@ -348,62 +348,87 @@ export default function AttendanceIndex({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                My Attendance Today
+                My Recent Attendance
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {currentUserAttendance ? (
+              {recentAttendance && Object.keys(recentAttendance).length > 0 ? (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="text-center">
-                      <div className="text-sm text-muted-foreground">Clock In</div>
-                      <div className="text-lg font-semibold">
-                        {formatTime(currentUserAttendance.start_time)}
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-sm text-muted-foreground">Clock Out</div>
-                      <div className="text-lg font-semibold">
-                        {formatTime(currentUserAttendance.end_time)}
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-sm text-muted-foreground">Total Hours</div>
-                      <div className="text-lg font-semibold">
-                        {formatTotalHours(currentUserAttendance)}
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-sm text-muted-foreground">Status</div>
-                      <div className="flex justify-center mt-1">
-                        {getStatusBadge(currentUserAttendance.status)}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {!currentUserAttendance.end_time && (
-                    <div className="flex items-center gap-4">
-                      <Button 
-                        onClick={handleClockOut}
-                        disabled={isClockingOut}
-                        className="flex-1"
-                      >
-                        {isClockingOut ? 'Clocking Out...' : 'Clock Out'}
-                      </Button>
-                      <input
-                        type="text"
-                        placeholder="Add notes (optional)"
-                        value={clockOutNotes}
-                        onChange={(e) => setClockOutNotes(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  )}
+                  {/* Show user's recent attendance records */}
+                  {Object.entries(recentAttendance)
+                    .filter(([date, attendances]) => 
+                      attendances.some(att => att.user_id === auth.user?.id)
+                    )
+                    .map(([date, attendances]) => {
+                      const userAttendances = attendances.filter(att => att.user_id === auth.user?.id);
+                      return (
+                        <div key={date} className="border rounded-lg p-4">
+                          <h4 className="font-medium text-sm text-muted-foreground mb-3">
+                            {format(new Date(date), 'EEEE, MMMM d, yyyy')}
+                          </h4>
+                          {userAttendances.map((attendance, index) => (
+                            <div key={attendance.id} className="space-y-3">
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="text-center">
+                                  <div className="text-sm text-muted-foreground">Clock In</div>
+                                  <div className="text-lg font-semibold">
+                                    {formatTime(attendance.start_time)}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-sm text-muted-foreground">Clock Out</div>
+                                  <div className="text-lg font-semibold">
+                                    {attendance.end_time ? formatTime(attendance.end_time) : '--:--'}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-sm text-muted-foreground">Total Hours</div>
+                                  <div className="text-lg font-semibold">
+                                    {formatTotalHours(attendance)}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-sm text-muted-foreground">Status</div>
+                                  <div className="flex justify-center mt-1">
+                                    {getStatusBadge(attendance.status)}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Clock Out button for incomplete records */}
+                              {!attendance.end_time && (
+                                <div className="flex items-center gap-4">
+                                  <Button 
+                                    onClick={() => handleClockOut()}
+                                    disabled={isClockingOut}
+                                    className="flex-1"
+                                  >
+                                    {isClockingOut ? 'Clocking Out...' : 'Clock Out'}
+                                  </Button>
+                                  <input
+                                    type="text"
+                                    placeholder="Add notes (optional)"
+                                    value={clockOutNotes}
+                                    onChange={(e) => setClockOutNotes(e.target.value)}
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  />
+                                </div>
+                              )}
+                              
+                              {/* Separator between multiple records on same day */}
+                              {index < userAttendances.length - 1 && (
+                                <hr className="my-3" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Not Clocked In Today</h3>
+                  <h3 className="text-lg font-semibold mb-2">No Recent Attendance Records</h3>
                   <p className="text-muted-foreground mb-4">
                     Click the button below to start your work day
                   </p>
