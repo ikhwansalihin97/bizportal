@@ -127,6 +127,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the salary rates for this user.
+     */
+    public function salaryRates(): HasMany
+    {
+        return $this->hasMany(SalaryRate::class);
+    }
+
+    /**
      * Get the current active salary rate for this user in a specific business.
      */
     public function getCurrentSalaryRate($businessId)
