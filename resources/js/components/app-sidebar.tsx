@@ -21,7 +21,16 @@ export function AppSidebar() {
   const userBusinesses = auth.businesses || []
 
   // Check if user can create businesses
-  const canCreateBusiness = auth.roles?.includes('superadmin') || auth.permissions?.includes('business.create')
+  const isSuperAdmin = auth.roles?.includes('superadmin') || auth.user?.profile?.role === 'superadmin'
+  const canCreateBusiness = isSuperAdmin || auth.permissions?.includes('business.create')
+
+  // Debug logging
+  console.log('Auth object:', auth)
+  console.log('User roles:', auth.roles)
+  console.log('User profile role:', auth.user?.profile?.role)
+  console.log('User permissions:', auth.permissions)
+  console.log('Is superadmin:', isSuperAdmin)
+  console.log('Can create business:', canCreateBusiness)
 
   // Auto-select business if only one exists and no current business
   React.useEffect(() => {
