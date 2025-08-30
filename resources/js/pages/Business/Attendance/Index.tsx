@@ -221,11 +221,11 @@ export default function AttendanceIndex({
         }
         setErrorMessage(errorMessage);
         clearErrorMessage();
-      } catch (error) {
-        console.error('Delete attendance error:', error);
-        setErrorMessage('Network error occurred while deleting attendance record. Please try again.');
-        clearErrorMessage();
       }
+    } catch (error) {
+      console.error('Delete attendance error:', error);
+      setErrorMessage('Network error occurred while deleting attendance record. Please try again.');
+      clearErrorMessage();
     }
   };
 
