@@ -22,9 +22,15 @@ export function AppSidebar() {
 
   // Auto-select business if only one exists and no current business
   React.useEffect(() => {
-    if (userBusinesses.length === 1 && !currentBusiness) {
+    const currentPath = window.location.pathname
+    const isOnBusinessPage = currentPath.includes('/businesses/') && currentPath !== '/businesses/create'
+    
+    if (userBusinesses.length === 1 && !currentBusiness && !isOnBusinessPage) {
       const business = userBusinesses[0]
-      window.location.href = `/businesses/${business.slug}/dashboard`
+      // Only redirect if we're not already on the right page
+      if (currentPath !== `/businesses/${business.slug}/dashboard`) {
+        window.location.href = `/businesses/${business.slug}/dashboard`
+      }
     }
   }, [userBusinesses, currentBusiness])
 
