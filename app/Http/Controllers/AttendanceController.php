@@ -186,26 +186,72 @@ class AttendanceController extends Controller
     {
         $user = auth()->user();
 
+        \Log::info('Clock-in attempt started', [
+            'user_id' => $user->id,
+            'business_id' => $business->id,
+            'user_roles' => $user->getRoleNames()->toArray(),
+        ]);
+
         // Check if user is already clocked in today
         if (Attendance::hasClockedInToday($user->id, $business->id)) {
+            \Log::info('User already clocked in today', [
+                'user_id' => $user->id,
+                'business_id' => $business->id,
+            ]);
             return back()->with('error', 'You have already clocked in today.');
         }
 
         try {
+            // Check for any existing attendance record for today (even without start_time)
+            $existingAttendance = Attendance::where('user_id', $user->id)
+                ->where('business_id', $business->id)
+                ->where('work_date', Carbon::today())
+                ->first();
+
+            if ($existingAttendance) {
+                \Log::info('Found existing attendance record, updating start_time', [
+                    'attendance_id' => $existingAttendance->id,
+                    'user_id' => $user->id,
+                    'business_id' => $business->id,
+                ]);
+
+                // Update existing record with start_time
+                $existingAttendance->update([
+                    'start_time' => Carbon::now(),
+                    'status' => 'pending',
+                ]);
+
+                return back()->with('success', 'Successfully clocked in at ' . Carbon::now()->format('H:i'));
+            }
+
             // Get current salary rate for the user (optional for superadmins)
             $salaryRate = null;
             if (!$user->hasRole('superadmin')) {
                 $salaryRate = $user->getCurrentSalaryRate($business->id);
+                \Log::info('Salary rate retrieved', [
+                    'user_id' => $user->id,
+                    'salary_rate_id' => $salaryRate?->id,
+                ]);
             }
 
-            // Create attendance record
-            $attendance = Attendance::create([
+            // Prepare attendance data
+            $attendanceData = [
                 'user_id' => $user->id,
                 'business_id' => $business->id,
                 'salary_rate_id' => $salaryRate?->id,
                 'work_date' => Carbon::today(),
                 'start_time' => Carbon::now(),
                 'status' => 'pending',
+            ];
+
+            \Log::info('Creating new attendance record', $attendanceData);
+
+            // Create attendance record
+            $attendance = Attendance::create($attendanceData);
+
+            \Log::info('Attendance record created successfully', [
+                'attendance_id' => $attendance->id,
+                'uuid' => $attendance->uuid,
             ]);
 
             return back()->with('success', 'Successfully clocked in at ' . Carbon::now()->format('H:i'));
@@ -214,7 +260,8 @@ class AttendanceController extends Controller
                 'user_id' => $user->id,
                 'business_id' => $business->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'attendance_data' => $attendanceData ?? 'not set',
             ]);
             
             return back()->with('error', 'Failed to clock in. Please try again.');
