@@ -191,20 +191,34 @@ class AttendanceController extends Controller
             return back()->with('error', 'You have already clocked in today.');
         }
 
-        // Get current salary rate for the user
-        $salaryRate = $user->getCurrentSalaryRate($business->id);
+        try {
+            // Get current salary rate for the user (optional for superadmins)
+            $salaryRate = null;
+            if (!$user->hasRole('superadmin')) {
+                $salaryRate = $user->getCurrentSalaryRate($business->id);
+            }
 
-        // Create attendance record
-        $attendance = Attendance::create([
-            'user_id' => $user->id,
-            'business_id' => $business->id,
-            'salary_rate_id' => $salaryRate?->id,
-            'work_date' => Carbon::today(),
-            'start_time' => Carbon::now(),
-            'status' => 'pending',
-        ]);
+            // Create attendance record
+            $attendance = Attendance::create([
+                'user_id' => $user->id,
+                'business_id' => $business->id,
+                'salary_rate_id' => $salaryRate?->id,
+                'work_date' => Carbon::today(),
+                'start_time' => Carbon::now(),
+                'status' => 'pending',
+            ]);
 
-        return back()->with('success', 'Successfully clocked in at ' . Carbon::now()->format('H:i'));
+            return back()->with('success', 'Successfully clocked in at ' . Carbon::now()->format('H:i'));
+        } catch (\Exception $e) {
+            \Log::error('Clock-in failed: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'business_id' => $business->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()->with('error', 'Failed to clock in. Please try again.');
+        }
     }
 
     /**
@@ -214,29 +228,40 @@ class AttendanceController extends Controller
     {
         $user = auth()->user();
 
-        // Get today's attendance record
-        $attendance = Attendance::getTodayRecord($user->id, $business->id);
+        try {
+            // Get today's attendance record
+            $attendance = Attendance::getTodayRecord($user->id, $business->id);
 
-        if (!$attendance) {
-            return back()->with('error', 'No clock-in record found for today.');
+            if (!$attendance) {
+                return back()->with('error', 'No clock-in record found for today.');
+            }
+
+            if ($attendance->end_time) {
+                return back()->with('error', 'You have already clocked out today.');
+            }
+
+            // Calculate hours worked
+            $endTime = Carbon::now();
+            $startTime = Carbon::parse($attendance->start_time);
+            $regularUnits = $endTime->diffInHours($startTime) + ($endTime->diffInMinutes($startTime) % 60) / 60;
+
+            // Update attendance record
+            $attendance->update([
+                'end_time' => $endTime,
+                'regular_units' => $regularUnits,
+            ]);
+
+            return back()->with('success', 'Successfully clocked out at ' . $endTime->format('H:i'));
+        } catch (\Exception $e) {
+            \Log::error('Clock-out failed: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'business_id' => $business->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()->with('error', 'Failed to clock out. Please try again.');
         }
-
-        if ($attendance->end_time) {
-            return back()->with('error', 'You have already clocked out today.');
-        }
-
-        // Calculate hours worked
-        $endTime = Carbon::now();
-        $startTime = Carbon::parse($attendance->start_time);
-        $regularUnits = $endTime->diffInHours($startTime) + ($endTime->diffInMinutes($startTime) % 60) / 60;
-
-        // Update attendance record
-        $attendance->update([
-            'end_time' => $endTime,
-            'regular_units' => $regularUnits,
-        ]);
-
-        return back()->with('success', 'Successfully clocked out at ' . $endTime->format('H:i'));
     }
 
     /**

@@ -4,6 +4,7 @@ import {
   Building2,
   Plus,
   ChevronsUpDown,
+  Shield,
 } from "lucide-react"
 import { usePage } from "@inertiajs/react"
 import type { SharedData } from "@/types"
@@ -64,7 +65,7 @@ export function AppSidebar() {
     {
       title: 'Dashboard',
       url: '/dashboard',
-      icon: 'Home',
+      icon: Home,
       items: [
         {
           title: 'Main Dashboard',
@@ -102,7 +103,7 @@ export function AppSidebar() {
       {
         title: 'Business',
         url: `/businesses/${displayBusiness.slug}/dashboard`,
-        icon: 'Building2',
+        icon: Building2,
         items: businessItems,
       }
     )
@@ -113,7 +114,7 @@ export function AppSidebar() {
       {
         title: 'Admin',
         url: '/admin',
-        icon: 'Shield',
+        icon: Shield,
         items: [
           {
             title: 'Users',
