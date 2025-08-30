@@ -313,11 +313,11 @@ class AttendanceController extends Controller
             $attendance = Attendance::getTodayRecord($user->id, $business->id);
 
             if (!$attendance) {
-                return back()->with('error', 'No clock-in record found for today.');
+                return response()->json(['error' => 'No clock-in record found for today.'], 404);
             }
 
             if ($attendance->end_time) {
-                return back()->with('error', 'You have already clocked out today.');
+                return response()->json(['error' => 'You have already clocked out today.'], 400);
             }
 
             // Calculate hours worked
@@ -368,7 +368,14 @@ class AttendanceController extends Controller
                 'overtime_units' => $overtimeUnits,
             ]);
 
-            return back()->with('success', 'Successfully clocked out at ' . $endTime->format('H:i'));
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully clocked out at ' . $endTime->format('H:i'),
+                'attendance' => $attendance->fresh()->load('user'),
+                'end_time' => $endTime->toISOString(),
+                'regular_units' => $regularUnits,
+                'overtime_units' => $overtimeUnits,
+            ]);
         } catch (\Exception $e) {
             \Log::error('Clock-out failed: ' . $e->getMessage(), [
                 'user_id' => $user->id,
@@ -377,7 +384,7 @@ class AttendanceController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return back()->with('error', 'Failed to clock out. Please try again.');
+            return response()->json(['error' => 'Failed to clock out. Please try again.'], 500);
         }
     }
 

@@ -61,7 +61,7 @@ export default function AttendanceIndex({
   todayAttendance,
   currentUserAttendance,
   stats,
-  recentAttendance,
+  recentAttendance: initialRecentAttendance,
   userRole,
   canManage,
 }: Props) {
@@ -70,6 +70,7 @@ export default function AttendanceIndex({
   const [isClockingOut, setIsClockingOut] = useState(false);
   const [clockOutNotes, setClockOutNotes] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [recentAttendance, setRecentAttendance] = useState(initialRecentAttendance);
 
   // Update current time every second
   useEffect(() => {
@@ -117,13 +118,42 @@ export default function AttendanceIndex({
         body: JSON.stringify({ notes: clockOutNotes }),
       });
 
-      if (response.ok) {
-        window.location.reload();
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Success - update the attendance data dynamically
+        const updatedAttendance = data.attendance;
+        
+        // Update the recentAttendance state with the new data
+        if (recentAttendance) {
+          const workDate = updatedAttendance.work_date;
+          const dateKey = new Date(workDate).toISOString().split('T')[0];
+          
+          setRecentAttendance(prev => {
+            const newData = { ...prev };
+            
+            // Find and update the specific attendance record
+            if (newData[dateKey]) {
+              newData[dateKey] = newData[dateKey].map(att => 
+                att.id === updatedAttendance.id ? updatedAttendance : att
+              );
+            }
+            
+            return newData;
+          });
+        }
+
+        // Clear the notes
+        setClockOutNotes('');
+        
+        // Show success message
+        alert(data.message || 'Successfully clocked out!');
       } else {
-        const data = await response.json();
+        // Error
         alert(data.error || 'Failed to clock out');
       }
     } catch (error) {
+      console.error('Clock out error:', error);
       alert('Failed to clock out');
     } finally {
       setIsClockingOut(false);
