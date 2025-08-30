@@ -79,7 +79,19 @@ export default function UserRecords({
 
   const formatTime = (time: string | null) => {
     if (!time) return '--:--';
-    return format(new Date(time), 'HH:mm');
+    
+    // Parse the UTC datetime and show the actual UTC time without conversion
+    const date = new Date(time);
+    
+    // Get UTC components to avoid timezone conversion
+    const utcHours = date.getUTCHours();
+    const utcMinutes = date.getUTCMinutes();
+    
+    // Format as "HH:mm UTC"
+    const hours = utcHours.toString().padStart(2, '0');
+    const minutes = utcMinutes.toString().padStart(2, '0');
+    
+    return `${hours}:${minutes} UTC`;
   };
 
   const getInitials = (name: string) => {

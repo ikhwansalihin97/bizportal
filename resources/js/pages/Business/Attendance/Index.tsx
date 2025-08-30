@@ -188,7 +188,37 @@ export default function AttendanceIndex({
 
   const formatTime = (time: string | null) => {
     if (!time) return '--:--';
-    return format(new Date(time), 'HH:mm');
+    
+    // Parse the UTC datetime and show the actual UTC time without conversion
+    const date = new Date(time);
+    
+    // Get UTC components to avoid timezone conversion
+    const utcHours = date.getUTCHours();
+    const utcMinutes = date.getUTCMinutes();
+    
+    // Format as "HH:mm UTC"
+    const hours = utcHours.toString().padStart(2, '0');
+    const minutes = utcMinutes.toString().padStart(2, '0');
+    
+    return `${hours}:${minutes} UTC`;
+  };
+
+  const formatTotalHours = (attendance: Attendance) => {
+    if (!attendance.regular_units && !attendance.overtime_units) {
+      return '--:--';
+    }
+    
+    const totalHours = (attendance.regular_units || 0) + (attendance.overtime_units || 0);
+    const hours = Math.floor(totalHours);
+    const minutes = Math.round((totalHours - hours) * 60);
+    
+    if (hours === 0) {
+      return `${minutes}m`;
+    } else if (minutes === 0) {
+      return `${hours}h`;
+    } else {
+      return `${hours}h ${minutes}m`;
+    }
   };
 
   const getInitials = (name: string) => {
@@ -319,7 +349,7 @@ export default function AttendanceIndex({
                     <div className="text-center">
                       <div className="text-sm text-muted-foreground">Total Hours</div>
                       <div className="text-lg font-semibold">
-                        {currentUserAttendance.total_hours_formatted}
+                        {formatTotalHours(currentUserAttendance)}
                       </div>
                     </div>
                     <div className="text-center">
@@ -406,7 +436,7 @@ export default function AttendanceIndex({
                           <div>
                             <div className="text-sm text-muted-foreground">Hours</div>
                             <div className="font-mono text-sm">
-                              {attendance.total_hours_formatted}
+                              {formatTotalHours(attendance)}
                             </div>
                           </div>
                         </div>
