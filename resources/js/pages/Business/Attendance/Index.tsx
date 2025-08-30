@@ -4,6 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Clock, Users, Calendar, TrendingUp, User, CheckCircle, XCircle, AlertCircle, Hourglass, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -71,6 +72,17 @@ export default function AttendanceIndex({
   const [clockOutNotes, setClockOutNotes] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [recentAttendance, setRecentAttendance] = useState(initialRecentAttendance);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Clear messages after a delay
+  const clearSuccessMessage = () => {
+    setTimeout(() => setSuccessMessage(null), 5000);
+  };
+
+  const clearErrorMessage = () => {
+    setTimeout(() => setErrorMessage(null), 5000);
+  };
 
   // Update current time every second
   useEffect(() => {
@@ -97,10 +109,12 @@ export default function AttendanceIndex({
         window.location.reload();
       } else {
         const data = await response.json();
-        alert(data.error || 'Failed to clock in');
+        setErrorMessage(data.error || 'Failed to clock in');
+        clearErrorMessage();
       }
     } catch (error) {
-      alert('Failed to clock in');
+      setErrorMessage('Failed to clock in');
+      clearErrorMessage();
     } finally {
       setIsClockingIn(false);
     }
@@ -147,14 +161,17 @@ export default function AttendanceIndex({
         setClockOutNotes('');
         
         // Show success message
-        alert(data.message || 'Successfully clocked out!');
+        setSuccessMessage(data.message || 'Successfully clocked out!');
+        clearSuccessMessage();
       } else {
         // Error
-        alert(data.error || 'Failed to clock out');
+        setErrorMessage(data.error || 'Failed to clock out');
+        clearErrorMessage();
       }
     } catch (error) {
       console.error('Clock out error:', error);
-      alert('Failed to clock out');
+      setErrorMessage('Failed to clock out');
+      clearErrorMessage();
     } finally {
       setIsClockingOut(false);
     }
@@ -176,7 +193,8 @@ export default function AttendanceIndex({
                        document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='))?.split('=')[1];
 
       if (!csrfToken) {
-        alert('CSRF token not found. Please refresh the page and try again.');
+        setErrorMessage('CSRF token not found. Please refresh the page and try again.');
+        clearErrorMessage();
         return;
       }
 
@@ -201,11 +219,13 @@ export default function AttendanceIndex({
           // If response is not JSON, use status text
           errorMessage = response.statusText || errorMessage;
         }
-        alert(errorMessage);
+        setErrorMessage(errorMessage);
+        clearErrorMessage();
+      } catch (error) {
+        console.error('Delete attendance error:', error);
+        setErrorMessage('Network error occurred while deleting attendance record. Please try again.');
+        clearErrorMessage();
       }
-    } catch (error) {
-      console.error('Delete attendance error:', error);
-      alert('Network error occurred while deleting attendance record. Please try again.');
     }
   };
 
@@ -332,6 +352,25 @@ export default function AttendanceIndex({
               </div>
             </div>
           </div>
+
+          {/* Alert Messages */}
+          {successMessage && (
+            <Alert className="mb-6 border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                {successMessage}
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {errorMessage && (
+            <Alert className="mb-6 border-red-200 bg-red-50">
+              <XCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                {errorMessage}
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
