@@ -301,11 +301,21 @@ export default function AttendanceEdit({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Start Time:</span>
-                    <span className="font-medium">{formatTimeForDisplay(attendance.start_time)}</span>
+                    <span className="font-medium">
+                      {formatTimeForDisplay(attendance.start_time)}
+                      <span className="text-xs text-gray-500 ml-2">
+                        (raw: {attendance.start_time})
+                      </span>
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">End Time:</span>
-                    <span className="font-medium">{formatTimeForDisplay(attendance.end_time)}</span>
+                    <span className="font-medium">
+                      {formatTimeForDisplay(attendance.end_time)}
+                      <span className="text-xs text-gray-500 ml-2">
+                        (raw: {attendance.end_time})
+                      </span>
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Status:</span>
