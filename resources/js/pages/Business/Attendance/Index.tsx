@@ -105,14 +105,41 @@ export default function AttendanceIndex({
         body: JSON.stringify({}),
       });
 
-      if (response.ok) {
-        window.location.reload();
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Success - update the attendance data dynamically
+        const newAttendance = data.attendance;
+        
+        // Update the recentAttendance state with the new data
+        if (recentAttendance) {
+          const workDate = newAttendance.work_date;
+          const dateKey = new Date(workDate).toISOString().split('T')[0];
+          
+          setRecentAttendance(prev => {
+            const newData = { ...prev };
+            
+            // Add the new attendance record to the appropriate date
+            if (newData[dateKey]) {
+              newData[dateKey] = [newAttendance, ...newData[dateKey]];
+            } else {
+              newData[dateKey] = [newAttendance];
+            }
+            
+            return newData;
+          });
+        }
+
+        // Show success message
+        setSuccessMessage(data.message || 'Successfully clocked in!');
+        clearSuccessMessage();
       } else {
-        const data = await response.json();
+        // Error
         setErrorMessage(data.error || 'Failed to clock in');
         clearErrorMessage();
       }
     } catch (error) {
+      console.error('Clock in error:', error);
       setErrorMessage('Failed to clock in');
       clearErrorMessage();
     } finally {
