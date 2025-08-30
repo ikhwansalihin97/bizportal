@@ -72,12 +72,6 @@ export default function AttendanceEdit({
     
     // Parse the UTC datetime and display in local time
     const date = new Date(dateTimeString);
-    console.log('formatTimeForDisplay:', { 
-      original: dateTimeString, 
-      parsed: date, 
-      localTime: date.toLocaleTimeString(),
-      utcTime: date.toUTCString() 
-    });
     return format(date, 'HH:mm');
   };
 
@@ -85,12 +79,6 @@ export default function AttendanceEdit({
   const formatDateForDisplay = (dateString: string) => {
     // Parse the date and display in local time
     const date = new Date(dateString);
-    console.log('formatDateForDisplay:', { 
-      original: dateString, 
-      parsed: date, 
-      localDate: date.toLocaleDateString(),
-      utcDate: date.toUTCString() 
-    });
     return format(date, 'MMM dd, yyyy');
   };
 
