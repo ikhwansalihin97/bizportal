@@ -347,7 +347,7 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Update attendance record (for managers and users with attendance.edit permission).
+     * Update attendance record (for managers, users with attendance.edit permission, or users editing their own records).
      */
     public function update(Request $request, Business $business, Attendance $attendance)
     {
@@ -359,7 +359,14 @@ class AttendanceController extends Controller
         } else {
             // Check business role for non-superadmins
             $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
-            $canManage = in_array($userRole, ['owner']) || $user->can('attendance.edit');
+            
+            // Users can edit their own attendance records
+            $canEditOwn = $attendance->user_id === $user->id;
+            
+            // Users can edit if they are owners, have attendance.edit permission, or are editing their own record
+            $canManage = in_array($userRole, ['owner']) || 
+                        $user->can('attendance.edit') || 
+                        $canEditOwn;
         }
 
         if (!$canManage) {
@@ -382,6 +389,7 @@ class AttendanceController extends Controller
 
     /**
      * Delete attendance record (for managers and users with attendance.delete permission).
+     * Note: Users cannot delete their own attendance records for security reasons.
      */
     public function destroy(Business $business, Attendance $attendance)
     {
@@ -393,6 +401,9 @@ class AttendanceController extends Controller
         } else {
             // Check business role for non-superadmins
             $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
+            
+            // Users cannot delete their own attendance records for security reasons
+            // Only managers, owners, or users with attendance.delete permission can delete
             $canManage = in_array($userRole, ['owner']) || $user->can('attendance.delete');
         }
 

@@ -416,10 +416,15 @@ export default function AttendanceIndex({
                           {getStatusBadge(attendance.status)}
                         </div>
                         
-                        {/* Action buttons for managers and superadmins */}
-                        {(canManage || auth.permissions?.includes('attendance.edit') || auth.permissions?.includes('attendance.delete')) && (
+                        {/* Action buttons for managers, superadmins, users with permissions, or users editing their own records */}
+                        {(canManage || 
+                          auth.permissions?.includes('attendance.edit') || 
+                          auth.permissions?.includes('attendance.delete') ||
+                          attendance.user_id === auth.user?.id) && (
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            {(canManage || auth.permissions?.includes('attendance.edit')) && (
+                            {(canManage || 
+                              auth.permissions?.includes('attendance.edit') ||
+                              attendance.user_id === auth.user?.id) && (
                               <Button
                                 variant="outline"
                                 size="sm"
