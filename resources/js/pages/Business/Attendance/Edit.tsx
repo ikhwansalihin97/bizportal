@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Clock, User, Calculator } from 'lucide-react';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
+import type { BreadcrumbItem } from '@/types';
 
 interface Attendance {
   id: number;
@@ -53,6 +54,26 @@ export default function AttendanceEdit({
     overtime: 0,
     total: 0
   });
+
+  // Define breadcrumbs for navigation
+  const breadcrumbs: BreadcrumbItem[] = [
+    {
+      title: 'Dashboard',
+      url: '/dashboard',
+    },
+    {
+      title: business.name,
+      url: `/businesses/${business.slug}`,
+    },
+    {
+      title: 'Attendance',
+      url: `/businesses/${business.slug}/attendance`,
+    },
+    {
+      title: 'Edit Record',
+      url: `/businesses/${business.slug}/attendance/records/${attendance.uuid}/edit`,
+    },
+  ];
 
   // Helper function to format datetime for datetime-local input
   const formatDateTimeForInput = (dateTimeString: string | null) => {
@@ -137,7 +158,7 @@ export default function AttendanceEdit({
   };
 
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={`Edit Attendance - ${business.name}`} />
       
       <div className="p-6 max-w-4xl mx-auto">

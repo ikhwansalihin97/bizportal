@@ -10,6 +10,7 @@ import { Clock, Users, Calendar, TrendingUp, User, CheckCircle, XCircle, AlertCi
 import { format } from 'date-fns';
 import { usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
+import type { BreadcrumbItem } from '@/types';
 
 interface Attendance {
   id: number;
@@ -74,6 +75,22 @@ export default function AttendanceIndex({
   const [recentAttendance, setRecentAttendance] = useState(initialRecentAttendance);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Define breadcrumbs for navigation
+  const breadcrumbs: BreadcrumbItem[] = [
+    {
+      title: 'Dashboard',
+      url: '/dashboard',
+    },
+    {
+      title: business.name,
+      url: `/businesses/${business.slug}`,
+    },
+    {
+      title: 'Attendance',
+      url: `/businesses/${business.slug}/attendance`,
+    },
+  ];
 
   // Clear messages after a delay
   const clearSuccessMessage = () => {
@@ -330,7 +347,7 @@ export default function AttendanceIndex({
 
   if (!isBusinessMember) {
     return (
-      <AppLayout>
+      <AppLayout breadcrumbs={breadcrumbs}>
         <Head title={`${business.name} - Attendance`} />
         <div className="p-6 max-w-7xl mx-auto">
           <div className="text-center py-12">
@@ -351,7 +368,7 @@ export default function AttendanceIndex({
   }
 
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={`${business.name} - Attendance`} />
       
       <div className="p-6 max-w-7xl mx-auto">
