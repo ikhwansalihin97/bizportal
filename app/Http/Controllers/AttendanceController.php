@@ -347,6 +347,41 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Show the form for editing the specified attendance record.
+     */
+    public function edit(Business $business, Attendance $attendance)
+    {
+        $user = auth()->user();
+        
+        // Superadmins always have access
+        if ($user->hasRole('superadmin')) {
+            $canManage = true;
+        } else {
+            // Check business role for non-superadmins
+            $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
+            
+            // Users can edit their own attendance records
+            $canEditOwn = $attendance->user_id === $user->id;
+            
+            // Users can edit if they are owners, have attendance.edit permission, or are editing their own record
+            $canManage = in_array($userRole, ['owner']) || 
+                        $user->can('attendance.edit') || 
+                        $canEditOwn;
+        }
+
+        if (!$canManage) {
+            abort(403, 'Unauthorized to edit attendance records.');
+        }
+
+        return Inertia::render('Business/Attendance/Edit', [
+            'business' => $business,
+            'attendance' => $attendance->load('user'),
+            'canManage' => $canManage,
+            'isOwnRecord' => $attendance->user_id === $user->id,
+        ]);
+    }
+
+    /**
      * Update attendance record (for managers, users with attendance.edit permission, or users editing their own records).
      */
     public function update(Request $request, Business $business, Attendance $attendance)

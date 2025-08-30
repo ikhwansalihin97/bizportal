@@ -41,6 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('businesses.attendance.clockIn');
             Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('businesses.attendance.clockOut');
             Route::get('/status', [AttendanceController::class, 'status'])->name('businesses.attendance.status');
+            Route::get('/records/{attendance}/edit', [AttendanceController::class, 'edit'])->name('businesses.attendance.edit');
             Route::put('/records/{attendance}', [AttendanceController::class, 'update'])->name('businesses.attendance.update');
             Route::delete('/records/{attendance}', [AttendanceController::class, 'destroy'])->name('businesses.attendance.destroy');
         });
