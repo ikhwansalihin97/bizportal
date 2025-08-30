@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Clock, User } from 'lucide-react';
-import { format } from 'date-fns';
+import { ArrowLeft, Clock, User, Calculator } from 'lucide-react';
+import { format, differenceInMinutes, parseISO } from 'date-fns';
 
 interface Attendance {
   id: number;
@@ -48,17 +48,51 @@ export default function AttendanceEdit({
   canManage,
   isOwnRecord,
 }: Props) {
+  const [calculatedHours, setCalculatedHours] = useState({
+    regular: 0,
+    overtime: 0,
+    total: 0
+  });
+
   const { data, setData, put, processing, errors } = useForm({
     start_time: attendance.start_time ? format(new Date(attendance.start_time), 'yyyy-MM-dd\'T\'HH:mm') : '',
     end_time: attendance.end_time ? format(new Date(attendance.end_time), 'yyyy-MM-dd\'T\'HH:mm') : '',
-    regular_units: attendance.regular_units?.toString() || '',
-    overtime_units: attendance.overtime_units?.toString() || '',
     notes: attendance.notes || '',
     status: attendance.status,
   });
 
+  // Calculate hours when start or end time changes
+  useEffect(() => {
+    if (data.start_time && data.end_time) {
+      const startTime = parseISO(data.start_time);
+      const endTime = parseISO(data.end_time);
+      
+      if (startTime < endTime) {
+        const totalMinutes = differenceInMinutes(endTime, startTime);
+        const totalHours = totalMinutes / 60;
+        
+        // Assuming 8 hours is regular time, anything over is overtime
+        const regularHours = Math.min(totalHours, 8);
+        const overtimeHours = Math.max(0, totalHours - 8);
+        
+        setCalculatedHours({
+          regular: Math.round(regularHours * 100) / 100,
+          overtime: Math.round(overtimeHours * 100) / 100,
+          total: Math.round(totalHours * 100) / 100
+        });
+      } else {
+        setCalculatedHours({ regular: 0, overtime: 0, total: 0 });
+      }
+    } else {
+      setCalculatedHours({ regular: 0, overtime: 0, total: 0 });
+    }
+  }, [data.start_time, data.end_time]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Submit the form with start_time, end_time, notes, and status
+    // Hours will be calculated automatically on the backend
     put(`/businesses/${business.slug}/attendance/records/${attendance.uuid}`);
   };
 
@@ -146,41 +180,32 @@ export default function AttendanceEdit({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="regular_units">Regular Hours</Label>
-                      <Input
-                        id="regular_units"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={data.regular_units}
-                        onChange={(e) => setData('regular_units', e.target.value)}
-                        placeholder="8.00"
-                        className={errors.regular_units ? 'border-red-500' : ''}
-                      />
-                      {errors.regular_units && (
-                        <p className="text-sm text-red-500 mt-1">{errors.regular_units}</p>
-                      )}
+                  {/* Calculated Hours Display */}
+                  {(data.start_time && data.end_time) && (
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Calculator className="h-5 w-5 text-blue-600" />
+                        <h4 className="font-medium text-blue-900">Calculated Hours</h4>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div className="text-center">
+                          <div className="text-blue-600 font-medium">{calculatedHours.regular}h</div>
+                          <div className="text-blue-500">Regular</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-blue-600 font-medium">{calculatedHours.overtime}h</div>
+                          <div className="text-blue-500">Overtime</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-blue-600 font-medium">{calculatedHours.total}h</div>
+                          <div className="text-blue-500">Total</div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-blue-600 mt-2 text-center">
+                        Based on 8-hour regular workday
+                      </p>
                     </div>
-
-                    <div>
-                      <Label htmlFor="overtime_units">Overtime Hours</Label>
-                      <Input
-                        id="overtime_units"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={data.overtime_units}
-                        onChange={(e) => setData('overtime_units', e.target.value)}
-                        placeholder="0.00"
-                        className={errors.overtime_units ? 'border-red-500' : ''}
-                      />
-                      {errors.overtime_units && (
-                        <p className="text-sm text-red-500 mt-1">{errors.overtime_units}</p>
-                      )}
-                    </div>
-                  </div>
+                  )}
 
                   {canManage && (
                     <div>

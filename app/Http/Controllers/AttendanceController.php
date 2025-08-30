@@ -411,11 +411,34 @@ class AttendanceController extends Controller
         $validated = $request->validate([
             'start_time' => 'nullable|date',
             'end_time' => 'nullable|date|after:start_time',
-            'regular_units' => 'nullable|numeric|min:0',
-            'overtime_units' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:500',
             'status' => 'required|in:pending,approved,rejected',
         ]);
+
+        // Calculate hours automatically if both start and end times are provided
+        if (!empty($validated['start_time']) && !empty($validated['end_time'])) {
+            $startTime = \Carbon\Carbon::parse($validated['start_time']);
+            $endTime = \Carbon\Carbon::parse($validated['end_time']);
+            
+            if ($startTime < $endTime) {
+                $totalMinutes = $endTime->diffInMinutes($startTime);
+                $totalHours = $totalMinutes / 60;
+                
+                // Assuming 8 hours is regular time, anything over is overtime
+                $regularHours = min($totalHours, 8);
+                $overtimeHours = max(0, $totalHours - 8);
+                
+                $validated['regular_units'] = round($regularHours, 2);
+                $validated['overtime_units'] = round($overtimeHours, 2);
+            } else {
+                $validated['regular_units'] = 0;
+                $validated['overtime_units'] = 0;
+            }
+        } else {
+            // If times are not provided, reset hours
+            $validated['regular_units'] = 0;
+            $validated['overtime_units'] = 0;
+        }
 
         $attendance->update($validated);
 
