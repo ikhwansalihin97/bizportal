@@ -141,22 +141,41 @@ export default function AttendanceIndex({
     }
 
     try {
+      // Get CSRF token from meta tag or cookie
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                       document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='))?.split('=')[1];
+
+      if (!csrfToken) {
+        alert('CSRF token not found. Please refresh the page and try again.');
+        return;
+      }
+
       const response = await fetch(`/businesses/${business.slug}/attendance/records/${attendance.uuid}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          'X-CSRF-TOKEN': csrfToken,
         },
       });
 
       if (response.ok) {
+        // Success - reload the page to show updated list
         window.location.reload();
       } else {
-        const data = await response.json();
-        alert(data.error || 'Failed to delete attendance record');
+        // Try to get error message from response
+        let errorMessage = 'Failed to delete attendance record';
+        try {
+          const data = await response.json();
+          errorMessage = data.error || data.message || errorMessage;
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        alert(errorMessage);
       }
     } catch (error) {
-      alert('Failed to delete attendance record');
+      console.error('Delete attendance error:', error);
+      alert('Network error occurred while deleting attendance record. Please try again.');
     }
   };
 

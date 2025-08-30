@@ -507,11 +507,21 @@ class AttendanceController extends Controller
         }
 
         if (!$canManage) {
-            abort(403, 'Unauthorized to delete attendance records.');
+            return response()->json(['error' => 'Unauthorized to delete attendance records.'], 403);
         }
 
-        $attendance->delete();
-
-        return back()->with('success', 'Attendance record deleted successfully.');
+        try {
+            $attendance->delete();
+            return response()->json(['message' => 'Attendance record deleted successfully.'], 200);
+        } catch (\Exception $e) {
+            \Log::error('Delete attendance failed: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'business_id' => $business->id,
+                'attendance_id' => $attendance->id,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json(['error' => 'Failed to delete attendance record.'], 500);
+        }
     }
 }
