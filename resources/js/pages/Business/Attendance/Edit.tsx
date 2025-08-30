@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Clock, User, Calculator } from 'lucide-react';
-import { format, differenceInMinutes, parseISO, formatInTimeZone } from 'date-fns-tz';
+import { format, differenceInMinutes, parseISO } from 'date-fns';
 
 interface Attendance {
   id: number;
