@@ -35,30 +35,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Attendance Management
         Route::prefix('{business}/attendance')->group(function () {
-            Route::get('/', [AttendanceController::class, 'index'])->name('businesses.attendance.index');
-            Route::get('/report', [AttendanceController::class, 'report'])->name('businesses.attendance.report');
-            Route::get('/user/{user}/records', [AttendanceController::class, 'userRecords'])->name('businesses.attendance.userRecords');
-            Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('businesses.attendance.clockIn');
-            Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('businesses.attendance.clockOut');
-            Route::get('/status', [AttendanceController::class, 'status'])->name('businesses.attendance.status');
-            Route::get('/records/{attendance}/edit', [AttendanceController::class, 'edit'])->name('businesses.attendance.edit');
-            Route::put('/records/{attendance}', [AttendanceController::class, 'update'])->name('businesses.attendance.update');
-            Route::delete('/records/{attendance}', [AttendanceController::class, 'destroy'])->name('businesses.attendance.destroy');
+            Route::get('/', [AttendanceController::class, 'index'])->name('attendance.index');
+            Route::get('/report', [AttendanceController::class, 'report'])->name('attendance.report');
+            Route::get('/user/{user}/records', [AttendanceController::class, 'userRecords'])->name('attendance.userRecords');
+            Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('attendance.clockIn');
+            Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('attendance.clockOut');
+            Route::get('/status', [AttendanceController::class, 'status'])->name('attendance.status');
+            Route::get('/records/{attendance}/edit', [AttendanceController::class, 'edit'])->name('attendance.edit');
+            Route::put('/records/{attendance}', [AttendanceController::class, 'update'])->name('attendance.update');
+            Route::delete('/records/{attendance}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
         });
 
         // Salary configuration
         Route::prefix('{business}/salary-config')->group(function () {
-            Route::get('/', [SalaryConfigurationController::class, 'index'])->name('businesses.salary-config.index');
+            Route::get('/', [SalaryConfigurationController::class, 'index'])->name('salary-config.index');
             
             // Salary rates
-            Route::post('/salary-rates', [SalaryConfigurationController::class, 'storeSalaryRate'])->name('businesses.salary-config.salary-rates.store');
-            Route::put('/salary-rates/{salaryRate}', [SalaryConfigurationController::class, 'updateSalaryRate'])->name('businesses.salary-config.salary-rates.update');
-            Route::delete('/salary-rates/{salaryRate}', [SalaryConfigurationController::class, 'destroySalaryRate'])->name('businesses.salary-config.salary-rates.destroy');
+            Route::post('/salary-rates', [SalaryConfigurationController::class, 'storeSalaryRate'])->name('salary-config.salary-rates.store');
+            Route::put('/salary-rates/{salaryRate}', [SalaryConfigurationController::class, 'updateSalaryRate'])->name('salary-config.salary-rates.update');
+            Route::delete('/salary-rates/{salaryRate}', [SalaryConfigurationController::class, 'destroySalaryRate'])->name('salary-config.salary-rates.destroy');
             
             // Overtime rates
-            Route::post('/overtime-rates', [SalaryConfigurationController::class, 'storeOvertimeRate'])->name('businesses.salary-config.overtime-rates.store');
-            Route::put('/overtime-rates/{overtimeRate}', [SalaryConfigurationController::class, 'updateOvertimeRate'])->name('businesses.salary-config.overtime-rates.update');
-            Route::delete('/overtime-rates/{overtimeRate}', [SalaryConfigurationController::class, 'destroyOvertimeRate'])->name('businesses.salary-config.overtime-rates.destroy');
+            Route::post('/overtime-rates', [SalaryConfigurationController::class, 'storeOvertimeRate'])->name('salary-config.overtime-rates.store');
+            Route::put('/overtime-rates/{overtimeRate}', [SalaryConfigurationController::class, 'updateOvertimeRate'])->name('salary-config.overtime-rates.update');
+            Route::delete('/overtime-rates/{overtimeRate}', [SalaryConfigurationController::class, 'destroyOvertimeRate'])->name('salary-config.overtime-rates.destroy');
         });
 
         // Feature Management

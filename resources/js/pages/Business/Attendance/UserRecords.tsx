@@ -64,6 +64,25 @@ export default function UserRecords({
   userRole,
   canManage,
 }: Props) {
+  const breadcrumbs = [
+    {
+      title: 'Dashboard',
+      href: '/dashboard',
+    },
+    {
+      title: business.name,
+      href: `/businesses/${business.slug}`,
+    },
+    {
+      title: 'Attendance',
+      href: `/businesses/${business.slug}/attendance`,
+    },
+    {
+      title: `${user.name}'s Records`,
+      href: `/businesses/${business.slug}/attendance/user/${user.id}/records`,
+    },
+  ];
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
@@ -104,8 +123,8 @@ export default function UserRecords({
   };
 
   return (
-    <AppLayout>
-      <Head title={`${user.name} - Attendance Records`} />
+    <AppLayout breadcrumbs={breadcrumbs}>
+      <Head title={`${user.name} - Attendance Records - ${business.name}`} />
       
       <div className="p-6 max-w-7xl mx-auto">
         {/* Header */}

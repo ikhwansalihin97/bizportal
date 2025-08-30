@@ -85,6 +85,25 @@ export default function Report({
   const [endDate, setEndDate] = useState(filters.end_date);
   const [selectedUser, setSelectedUser] = useState(filters.user_id);
 
+  const breadcrumbs = [
+    {
+      title: 'Dashboard',
+      href: '/dashboard',
+    },
+    {
+      title: business.name,
+      href: `/businesses/${business.slug}`,
+    },
+    {
+      title: 'Attendance',
+      href: `/businesses/${business.slug}/attendance`,
+    },
+    {
+      title: 'Report',
+      href: `/businesses/${business.slug}/attendance/report`,
+    },
+  ];
+
   const handleFilter = () => {
     const params = new URLSearchParams();
     if (startDate) params.append('start_date', startDate);
@@ -113,7 +132,7 @@ export default function Report({
   };
 
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={`${business.name} - Attendance Report`} />
       
       <div className="p-6 max-w-7xl mx-auto">

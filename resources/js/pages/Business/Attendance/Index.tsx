@@ -80,15 +80,15 @@ export default function AttendanceIndex({
   const breadcrumbs: BreadcrumbItem[] = [
     {
       title: 'Dashboard',
-      url: '/dashboard',
+      href: '/dashboard',
     },
     {
       title: business.name,
-      url: `/businesses/${business.slug}`,
+      href: `/businesses/${business.slug}`,
     },
     {
       title: 'Attendance',
-      url: `/businesses/${business.slug}/attendance`,
+      href: `/businesses/${business.slug}/attendance`,
     },
   ];
 

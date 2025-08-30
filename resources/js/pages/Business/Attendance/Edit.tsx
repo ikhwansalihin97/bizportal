@@ -56,22 +56,22 @@ export default function AttendanceEdit({
   });
 
   // Define breadcrumbs for navigation
-  const breadcrumbs: BreadcrumbItem[] = [
+  const breadcrumbs = [
     {
       title: 'Dashboard',
-      url: '/dashboard',
+      href: '/dashboard',
     },
     {
       title: business.name,
-      url: `/businesses/${business.slug}`,
+      href: `/businesses/${business.slug}`,
     },
     {
       title: 'Attendance',
-      url: `/businesses/${business.slug}/attendance`,
+      href: `/businesses/${business.slug}/attendance`,
     },
     {
       title: 'Edit Record',
-      url: `/businesses/${business.slug}/attendance/records/${attendance.uuid}/edit`,
+      href: `/businesses/${business.slug}/attendance/records/${attendance.uuid}/edit`,
     },
   ];
 

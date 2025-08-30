@@ -1,11 +1,9 @@
 <?php
 
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\BusinessFeatureController;
-use App\Http\Controllers\BusinessController;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -79,30 +77,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::delete('/{permission}', [PermissionController::class, 'destroy'])->name('destroy');
     });
 
-    // Business Management Routes (Admin view of all businesses)
-    Route::prefix('businesses')->name('businesses.')->group(function () {
-        Route::get('/', [BusinessController::class, 'index'])->name('index');
-        Route::get('/create', [BusinessController::class, 'create'])->name('create');
-        Route::post('/', [BusinessController::class, 'store'])->name('store');
-        Route::get('/{business}', [BusinessController::class, 'show'])->name('show');
-        Route::get('/{business}/edit', [BusinessController::class, 'edit'])->name('edit');
-        Route::put('/{business}', [BusinessController::class, 'update'])->name('update');
-        Route::delete('/{business}', [BusinessController::class, 'destroy'])->name('destroy');
-        
-        // Business restoration (for soft deletes)
-        Route::post('/{business}/restore', [BusinessController::class, 'restore'])->name('restore');
-        
-        // Business status management
-        Route::patch('/{business}/toggle-status', [BusinessController::class, 'toggleStatus'])->name('toggle-status');
-        
-        // Business dashboard (admin view)
-        Route::get('/{business}/dashboard', [BusinessController::class, 'dashboard'])->name('dashboard');
-        
-        // Business features
-        Route::get('/{business}/features', [BusinessController::class, 'features'])->name('features');
-        Route::get('/{business}/features/{featureSlug}', [BusinessController::class, 'showFeature'])->name('features.show');
-    });
-
     // Business Features Management Routes
     Route::prefix('features')->name('features.')->group(function () {
         Route::get('/', [BusinessFeatureController::class, 'index'])->name('index');
@@ -152,19 +126,5 @@ Route::middleware(['auth', 'verified'])->prefix('api/admin')->name('api.admin.')
         Route::get('/{permission}', [PermissionController::class, 'show']);
         Route::put('/{permission}', [PermissionController::class, 'update']);
         Route::delete('/{permission}', [PermissionController::class, 'destroy']);
-    });
-    
-    // Business API endpoints
-    Route::prefix('businesses')->name('businesses.')->group(function () {
-        Route::get('/', [BusinessController::class, 'index']);
-        Route::post('/', [BusinessController::class, 'store']);
-        Route::get('/{business}', [BusinessController::class, 'show']);
-        Route::put('/{business}', [BusinessController::class, 'update']);
-        Route::delete('/{business}', [BusinessController::class, 'destroy']);
-        Route::post('/{business}/restore', [BusinessController::class, 'restore']);
-        Route::patch('/{business}/toggle-status', [BusinessController::class, 'toggleStatus']);
-        Route::get('/{business}/dashboard', [BusinessController::class, 'dashboard']);
-        Route::get('/{business}/features', [BusinessController::class, 'features']);
-        Route::get('/{business}/features/{featureSlug}', [BusinessController::class, 'showFeature']);
     });
 });
