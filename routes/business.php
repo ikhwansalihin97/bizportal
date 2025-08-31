@@ -4,6 +4,8 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\BusinessFeatureController;
 use App\Http\Controllers\BusinessUserController;
+use App\Http\Controllers\BusinessAdvanceController;
+use App\Http\Controllers\BusinessClaimController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SalaryConfigurationController;
 use Illuminate\Support\Facades\Route;
@@ -68,6 +70,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/assign', [BusinessFeatureController::class, 'assign'])->name('assign');
             Route::delete('/remove', [BusinessFeatureController::class, 'remove'])->name('remove');
             Route::get('/{feature}', [BusinessController::class, 'showFeature'])->name('show');
+        });
+
+        // Advances routes
+        Route::prefix('{business}/advances')->name('advances.')->group(function () {
+            Route::get('/', [BusinessAdvanceController::class, 'index'])->name('index');
+            Route::get('/create', [BusinessAdvanceController::class, 'create'])->name('create');
+            Route::post('/', [BusinessAdvanceController::class, 'store'])->name('store');
+            Route::get('/{advance}', [BusinessAdvanceController::class, 'show'])->name('show');
+            Route::get('/{advance}/edit', [BusinessAdvanceController::class, 'edit'])->name('edit');
+            Route::put('/{advance}', [BusinessAdvanceController::class, 'update'])->name('update');
+            Route::delete('/{advance}', [BusinessAdvanceController::class, 'destroy'])->name('destroy');
+            Route::put('/{advance}/status', [BusinessAdvanceController::class, 'updateStatus'])->name('updateStatus');
+            Route::put('/{advance}/paid', [BusinessAdvanceController::class, 'markAsPaid'])->name('markAsPaid');
+        });
+
+        // Claims routes
+        Route::prefix('{business}/claims')->name('claims.')->group(function () {
+            Route::get('/', [BusinessClaimController::class, 'index'])->name('index');
+            Route::get('/create', [BusinessClaimController::class, 'create'])->name('create');
+            Route::post('/', [BusinessClaimController::class, 'store'])->name('store');
+            Route::get('/{claim}', [BusinessClaimController::class, 'show'])->name('show');
+            Route::get('/{claim}/edit', [BusinessClaimController::class, 'edit'])->name('edit');
+            Route::put('/{claim}', [BusinessClaimController::class, 'update'])->name('update');
+            Route::delete('/{claim}', [BusinessClaimController::class, 'destroy'])->name('destroy');
+            Route::put('/{claim}/status', [BusinessClaimController::class, 'updateStatus'])->name('updateStatus');
+            Route::put('/{claim}/paid', [BusinessClaimController::class, 'markAsPaid'])->name('markAsPaid');
         });
         
         // Business User Management

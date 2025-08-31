@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, X, Settings, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { Link } from '@inertiajs/react';
 
 interface BusinessFeature {
   id: number;
@@ -30,6 +31,13 @@ interface Props {
   unassignedFeatures: BusinessFeature[];
   userRole: string;
   canManage: boolean;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    isSuperAdmin?: boolean;
+    permissions?: string[];
+  };
 }
 
 export default function FeaturesIndex({
@@ -39,26 +47,68 @@ export default function FeaturesIndex({
   unassignedFeatures,
   userRole,
   canManage,
+  user,
 }: Props) {
   const [activeTab, setActiveTab] = useState('assigned');
 
   const { post: assignFeature, processing: assigning } = useForm({
-    business_feature_id: '',
+    feature_id: '',
   });
 
   const { delete: removeFeature, processing: removing } = useForm({
-    business_feature_id: '',
+    feature_id: '',
   });
 
   const handleAssignFeature = (featureId: number) => {
-    assignFeature(route('businesses.features.assign', business.slug), {
-      data: { business_feature_id: featureId },
-    });
+    console.log('Assigning feature:', featureId);
+    
+    // Test if route function is working
+    console.log('Route function available:', typeof route);
+    console.log('Available routes:', window.route);
+    
+    try {
+      const routeUrl = route('businesses.features.assign', business.slug);
+      console.log('Route URL:', routeUrl);
+      console.log('Business slug:', business.slug);
+      
+      // Log the form object to see what methods are available
+      console.log('assignFeature object:', assignFeature);
+      console.log('assignFeature methods:', Object.getOwnPropertyNames(assignFeature));
+      
+      // Try to submit with the form first
+      if (typeof assignFeature.post === 'function') {
+        assignFeature.post(routeUrl, {
+          data: { feature_id: featureId },
+          onSuccess: () => {
+            console.log('Feature assigned successfully');
+          },
+          onError: (errors) => {
+            console.error('Error assigning feature:', errors);
+          },
+          onFinish: () => {
+            console.log('Form submission finished');
+          },
+        });
+      } else {
+        // Fallback to router.post
+        console.log('Using router.post fallback');
+        router.post(routeUrl, { feature_id: featureId }, {
+          onSuccess: () => {
+            console.log('Feature assigned successfully via router');
+          },
+          onError: (errors) => {
+            console.error('Error assigning feature via router:', errors);
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Exception in handleAssignFeature:', error);
+    }
   };
 
   const handleRemoveFeature = (featureId: number) => {
     removeFeature(route('businesses.features.remove', business.slug), {
-      data: { business_feature_id: featureId },
+      data: { feature_id: featureId },
     });
   };
 
@@ -103,16 +153,28 @@ export default function FeaturesIndex({
       <div className="p-6 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Settings className="h-6 w-6 text-purple-600" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Settings className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Feature Management</h1>
+                <p className="text-muted-foreground">
+                  Manage which features are available for {business.name}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Feature Management</h1>
-              <p className="text-muted-foreground">
-                Manage which features are available for {business.name}
-              </p>
-            </div>
+            
+            {/* Create Features Button */}
+            {canManage && user?.isSuperAdmin && (
+              <Button asChild>
+                <Link href="/admin/features/create">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Features
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 

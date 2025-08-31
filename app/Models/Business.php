@@ -273,4 +273,67 @@ class Business extends Model
         return $this->getUserRole($user) === $role;
     }
 
+    /**
+     * Get advances for this business.
+     */
+    public function advances()
+    {
+        return $this->hasMany(Advance::class);
+    }
+
+    /**
+     * Get claims for this business.
+     */
+    public function claims()
+    {
+        return $this->hasMany(Claim::class);
+    }
+
+    /**
+     * Get pending advances for this business.
+     */
+    public function pendingAdvances()
+    {
+        return $this->advances()->pending();
+    }
+
+    /**
+     * Get pending claims for this business.
+     */
+    public function pendingClaims()
+    {
+        return $this->claims()->pending();
+    }
+
+    /**
+     * Get total advances amount for this business.
+     */
+    public function getTotalAdvancesAmountAttribute(): float
+    {
+        return $this->advances()->sum('amount');
+    }
+
+    /**
+     * Get total claims amount for this business.
+     */
+    public function getTotalClaimsAmountAttribute(): float
+    {
+        return $this->claims()->sum('amount');
+    }
+
+    /**
+     * Get total pending advances amount for this business.
+     */
+    public function getTotalPendingAdvancesAmountAttribute(): float
+    {
+        return $this->pendingAdvances()->sum('amount');
+    }
+
+    /**
+     * Get total pending claims amount for this business.
+     */
+    public function getTotalPendingClaimsAmountAttribute(): float
+    {
+        return $this->pendingClaims()->sum('amount');
+    }
 }

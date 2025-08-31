@@ -42,6 +42,13 @@ class BusinessFeatureController extends Controller
             'unassignedFeatures' => $unassignedFeatures,
             'userRole' => $userRole,
             'canManage' => $canManage,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'isSuperAdmin' => $user->isSuperAdmin(),
+                'permissions' => $user->permissions->pluck('name')->toArray(),
+            ],
         ]);
     }
 
@@ -58,14 +65,22 @@ class BusinessFeatureController extends Controller
             abort(403, 'Unauthorized to manage business features.');
         }
 
+        // Debug: Log all request data
+        \Log::info('Feature assignment request data:', [
+            'all_data' => $request->all(),
+            'input' => $request->input(),
+            'post_data' => $request->post(),
+            'feature_id' => $request->input('feature_id'),
+            'business_id' => $business->id,
+            'user_id' => $user->id,
+        ]);
+
         $validated = $request->validate([
-            'business_feature_id' => 'required|exists:business_features,id',
+            'feature_id' => 'required|exists:business_features,id',
         ]);
 
         // Check if feature is already assigned
-        $existingAssignment = BusinessFeatureAssignment::where('business_id', $business->id)
-            ->where('business_feature_id', $validated['business_feature_id'])
-            ->exists();
+        $existingAssignment = $business->features()->where('feature_id', $validated['feature_id'])->exists();
 
         if ($existingAssignment) {
             return back()->with('error', 'Feature is already assigned to this business.');
@@ -74,8 +89,9 @@ class BusinessFeatureController extends Controller
         // Create the assignment
         BusinessFeatureAssignment::create([
             'business_id' => $business->id,
-            'business_feature_id' => $validated['business_feature_id'],
-            'assigned_by' => $user->id,
+            'feature_id' => $validated['feature_id'],
+            'enabled_by' => $user->id,
+            'is_enabled' => true, // Enable the feature when assigned
         ]);
 
         return back()->with('success', 'Feature assigned successfully.');
@@ -95,25 +111,14 @@ class BusinessFeatureController extends Controller
         }
 
         $validated = $request->validate([
-            'business_feature_id' => 'required|exists:business_features,id',
+            'feature_id' => 'required|exists:business_features,id',
         ]);
 
         // Remove the assignment
         BusinessFeatureAssignment::where('business_id', $business->id)
-            ->where('business_feature_id', $validated['business_feature_id'])
+            ->where('feature_id', $validated['feature_id'])
             ->delete();
 
         return back()->with('success', 'Feature removed successfully.');
-    }
-
-    /**
-     * Get enabled features for a business (for navigation).
-     */
-    public static function getEnabledFeatures(Business $business)
-    {
-        return BusinessFeatureAssignment::where('business_id', $business->id)
-            ->with('feature')
-            ->get()
-            ->pluck('feature');
     }
 }

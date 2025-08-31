@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminFeatureController;
 use App\Http\Controllers\BusinessFeatureController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
@@ -79,17 +80,17 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     // Business Features Management Routes
     Route::prefix('features')->name('features.')->group(function () {
-        Route::get('/', [BusinessFeatureController::class, 'index'])->name('index');
-        Route::get('/create', [BusinessFeatureController::class, 'create'])->name('create');
-        Route::post('/', [BusinessFeatureController::class, 'store'])->name('store');
-        Route::get('/{feature}', [BusinessFeatureController::class, 'show'])->name('show');
-        Route::get('/{feature}/edit', [BusinessFeatureController::class, 'edit'])->name('edit');
-        Route::put('/{feature}', [BusinessFeatureController::class, 'update'])->name('update');
-        Route::delete('/{feature}', [BusinessFeatureController::class, 'destroy'])->name('destroy');
+        Route::get('/', [AdminFeatureController::class, 'index'])->name('index');
+        Route::get('/create', [AdminFeatureController::class, 'create'])->name('create');
+        Route::post('/', [AdminFeatureController::class, 'store'])->name('store');
+        Route::get('/{feature}', [AdminFeatureController::class, 'show'])->name('show');
+        Route::get('/{feature}/edit', [AdminFeatureController::class, 'edit'])->name('edit');
+        Route::put('/{feature}', [AdminFeatureController::class, 'update'])->name('update');
+        Route::delete('/{feature}', [AdminFeatureController::class, 'destroy'])->name('destroy');
         
         // Feature assignment to businesses
-        Route::post('/{feature}/assign/{business}', [BusinessFeatureController::class, 'assignToBusiness'])->name('assign')->where('business', '[0-9]+');
-        Route::get('/business/{business}', [BusinessFeatureController::class, 'getBusinessFeatures'])->name('business');
+        Route::post('/{feature}/assign/{business}', [AdminFeatureController::class, 'assignToBusiness'])->name('assign')->where('business', '[0-9]+');
+        Route::get('/business/{business}', [AdminFeatureController::class, 'getBusinessFeatures'])->name('business');
     });
 });
 

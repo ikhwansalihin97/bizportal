@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user() ? $request->user()->load(['roles', 'permissions', 'businesses', 'profile']) : null,
                 'permissions' => $request->user() ? $request->user()->getAllPermissions()->pluck('name')->toArray() : [],
                 'roles' => $request->user() ? $request->user()->getRoleNames()->toArray() : [],
+                'isSuperAdmin' => $request->user() ? $request->user()->isSuperAdmin() : false,
                 'businesses' => $request->user() ? $request->user()->businesses()->get()->map(function($business) {
                     return [
                         'id' => $business->id,

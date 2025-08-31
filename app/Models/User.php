@@ -264,4 +264,36 @@ class User extends Authenticatable
         
         return substr($initials, 0, 2);
     }
+
+    /**
+     * Get advances requested by this user.
+     */
+    public function advances()
+    {
+        return $this->hasMany(Advance::class);
+    }
+
+    /**
+     * Get claims submitted by this user.
+     */
+    public function claims()
+    {
+        return $this->hasMany(Claim::class);
+    }
+
+    /**
+     * Get advances approved by this user.
+     */
+    public function approvedAdvances()
+    {
+        return $this->hasMany(Advance::class, 'approved_by');
+    }
+
+    /**
+     * Get claims approved by this user.
+     */
+    public function approvedClaims()
+    {
+        return $this->hasMany(Claim::class, 'approved_by');
+    }
 }

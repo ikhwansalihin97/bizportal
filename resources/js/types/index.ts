@@ -14,6 +14,7 @@ export interface Auth {
     user: User | null;
     permissions: string[];
     roles: string[];
+    isSuperAdmin: boolean;
     businesses: BusinessMembership[];
 }
 

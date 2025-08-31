@@ -23,7 +23,7 @@ export function AppSidebar() {
   const userBusinesses = auth.businesses || []
 
   // Check if user can create businesses
-  const isSuperAdmin = auth.roles?.includes('superadmin') || auth.user?.profile?.role === 'superadmin'
+  const isSuperAdmin = auth.isSuperAdmin || auth.roles?.includes('superadmin') || auth.user?.profile?.role === 'superadmin'
   const canCreateBusiness = isSuperAdmin || auth.permissions?.includes('business.create')
 
   // Auto-select business if user has only one
@@ -99,6 +99,44 @@ export function AppSidebar() {
       })
     }
 
+    // Add Advances navigation - always available for business users, superadmins see it regardless
+    // All business users should be able to access advances to create their own records
+    if (isSuperAdmin || auth.roles?.includes('superadmin') || auth.permissions?.includes('advances.view') || auth.permissions?.includes('advances.create') || displayBusiness) {
+      businessItems.push({
+        title: 'Advances',
+        url: `/businesses/${displayBusiness.slug}/advances`,
+        items: [
+          {
+            title: 'All Advances',
+            url: `/businesses/${displayBusiness.slug}/advances`,
+          },
+          {
+            title: 'My Advances',
+            url: `/businesses/${displayBusiness.slug}/advances?user_id=me`,
+          },
+        ],
+      })
+    }
+
+    // Add Claims navigation - always available for business users, superadmins see it regardless
+    // All business users should be able to access claims to create their own records
+    if (isSuperAdmin || auth.roles?.includes('superadmin') || auth.permissions?.includes('claims.view') || auth.permissions?.includes('claims.create') || displayBusiness) {
+      businessItems.push({
+        title: 'Claims',
+        url: `/businesses/${displayBusiness.slug}/claims`,
+        items: [
+          {
+            title: 'All Claims',
+            url: `/businesses/${displayBusiness.slug}/claims`,
+          },
+          {
+            title: 'My Claims',
+            url: `/businesses/${displayBusiness.slug}/claims?user_id=me`,
+          },
+        ],
+      })
+    }
+
     // Add Roles and Permissions for superadmins and business admins
     if (isSuperAdmin || auth.permissions?.includes('roles.view') || auth.permissions?.includes('permissions.view')) {
       businessItems.push(
@@ -116,7 +154,7 @@ export function AppSidebar() {
     // Add Features management for business owners and admins
     if (isSuperAdmin || displayBusiness.role === 'owner' || auth.permissions?.includes('business-features.view')) {
       businessItems.push({
-        title: 'Features',
+        title: 'Feature Management',
         url: `/businesses/${displayBusiness.slug}/features`,
       })
     }
@@ -131,7 +169,7 @@ export function AppSidebar() {
 
     navigationItems.push(
       {
-        title: 'Business',
+        title: displayBusiness.name,
         url: `/businesses/${displayBusiness.slug}/dashboard`,
         icon: Building2,
         items: businessItems,
@@ -139,24 +177,55 @@ export function AppSidebar() {
     )
   }
 
-  if (auth.roles?.includes('superadmin')) {
+  if (isSuperAdmin) {
     navigationItems.push(
       {
-        title: 'Admin',
+        title: 'System Core',
         url: '/admin',
         icon: Shield,
         items: [
           {
-            title: 'Users',
+            title: 'System Users',
             url: '/admin/users',
           },
           {
-            title: 'Roles',
+            title: 'System Roles',
             url: '/admin/roles',
           },
           {
-            title: 'Permissions',
+            title: 'System Permissions',
             url: '/admin/permissions',
+          },
+          {
+            title: 'Business Features',
+            url: '/admin/features',
+          },
+          {
+            title: 'System Settings',
+            url: '/admin/settings',
+          },
+          {
+            title: 'System Logs',
+            url: '/admin/logs',
+          },
+        ],
+      },
+      {
+        title: 'Business Management',
+        url: '/admin/businesses',
+        icon: Building2,
+        items: [
+          {
+            title: 'All Businesses',
+            url: '/admin/businesses',
+          },
+          {
+            title: 'Business Invitations',
+            url: '/admin/business-invitations',
+          },
+          {
+            title: 'Business Analytics',
+            url: '/admin/business-analytics',
           },
         ],
       }
