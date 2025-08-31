@@ -64,11 +64,27 @@ class BusinessUserController extends Controller
             return response()->json($users);
         }
 
+        // Debug logging
+        $user = Auth::user();
+        $isSuperAdmin = $user->isSuperAdmin();
+        $canCreatePermission = $user->can('users.create');
+        $allPermissions = $user->getAllPermissions()->pluck('name')->toArray();
+        
+        \Log::info('BusinessUserController debug', [
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'isSuperAdmin' => $isSuperAdmin,
+            'canCreatePermission' => $canCreatePermission,
+            'allPermissions' => $allPermissions,
+            'canCreateUsers' => $isSuperAdmin || $canCreatePermission
+        ]);
+
         return Inertia::render('Business/Users/Index', [
             'business' => $business,
             'users' => $users,
             'filters' => $request->only(['role', 'status', 'search']),
             'canManageUsers' => Auth::user()->canManageBusiness($business),
+            'canCreateUsers' => Auth::user()->isSuperAdmin() || Auth::user()->can('users.create'),
         ]);
     }
 

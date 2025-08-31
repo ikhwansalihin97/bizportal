@@ -220,7 +220,16 @@ class User extends Authenticatable
 
         // Check if user is owner of this business
         $role = $business->users()->where('user_id', $this->id)->first()?->pivot->business_role;
-        return $role === 'owner';
+        if ($role === 'owner') {
+            return true;
+        }
+
+        // Check if user has relevant permissions for managing users
+        if ($this->can('users.create') || $this->can('users.view') || $this->can('users.edit')) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

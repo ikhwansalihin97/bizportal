@@ -56,6 +56,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import type { Business, User as UserType, PaginatedResponse } from '@/types';
+import { usePage } from '@inertiajs/react';
 
 interface BusinessUser extends UserType {
   pivot: {
@@ -76,6 +77,7 @@ interface BusinessUsersIndexProps {
     search?: string;
   };
   canManageUsers: boolean;
+  canCreateUsers: boolean;
 }
 
 const roleIcons = {
@@ -98,13 +100,18 @@ export default function BusinessUsersIndex({
   business, 
   users, 
   filters, 
-  canManageUsers 
+  canManageUsers,
+  canCreateUsers
 }: BusinessUsersIndexProps) {
   const [searchValue, setSearchValue] = useState(filters.search || '');
   const [roleFilter, setRoleFilter] = useState(filters.role || 'all');
   const [statusFilter, setStatusFilter] = useState(filters.status || 'all');
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [userToRemove, setUserToRemove] = useState<BusinessUser | null>(null);
+
+  // Debug logging
+  console.log('BusinessUsersIndex props:', { canManageUsers, canCreateUsers });
+  console.log('Auth user:', usePage().props.auth);
 
   const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -226,12 +233,25 @@ export default function BusinessUsersIndex({
             </div>
             
             {canManageUsers && (
-              <Button asChild>
-                <Link href={`/businesses/${business.slug}/users/invite`}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Invite User
-                </Link>
-              </Button>
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button asChild variant="outline" className="w-full sm:w-auto">
+                    <Link href={`/businesses/${business.slug}/users/invite`}>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Invite User
+                    </Link>
+                  </Button>
+                  
+                  {canCreateUsers && (
+                    <Button asChild className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
+                      <Link href={`/admin/users/create`}>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Create User
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </div>
             )}
           </div>
 
@@ -351,11 +371,20 @@ export default function BusinessUsersIndex({
                       <Users className="h-8 w-8 text-muted-foreground" />
                       <p className="text-muted-foreground">No users found</p>
                       {canManageUsers && (
-                        <Button asChild variant="outline" size="sm">
-                          <Link href={`/businesses/${business.slug}/users/invite`}>
-                            Invite Users
-                          </Link>
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button asChild variant="outline" size="sm">
+                            <Link href={`/businesses/${business.slug}/users/invite`}>
+                              Invite Users
+                            </Link>
+                          </Button>
+                          {canCreateUsers && (
+                            <Button asChild variant="outline" size="sm">
+                              <Link href="/admin/users/create">
+                                Create User
+                              </Link>
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </TableCell>

@@ -89,6 +89,36 @@ export function AppSidebar() {
       })
     }
 
+    // Add Roles and Permissions for superadmins and business admins
+    if (isSuperAdmin || auth.permissions?.includes('roles.view') || auth.permissions?.includes('permissions.view')) {
+      businessItems.push(
+        {
+          title: 'Roles',
+          url: '/admin/roles',
+        },
+        {
+          title: 'Permissions',
+          url: '/admin/permissions',
+        }
+      )
+    }
+
+    // Add Features management for business owners and admins
+    if (isSuperAdmin || displayBusiness.role === 'owner' || auth.permissions?.includes('business-features.view')) {
+      businessItems.push({
+        title: 'Features',
+        url: `/businesses/${displayBusiness.slug}/features`,
+      })
+    }
+
+    // Add Salary Configuration for business owners and admins
+    if (isSuperAdmin || displayBusiness.role === 'owner' || auth.permissions?.includes('salary-config.view')) {
+      businessItems.push({
+        title: 'Salary Configuration',
+        url: `/businesses/${displayBusiness.slug}/salary-config`,
+      })
+    }
+
     navigationItems.push(
       {
         title: 'Business',
