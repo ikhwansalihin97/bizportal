@@ -32,7 +32,10 @@ class BusinessAdvanceController extends Controller
         $canCreate = true; // All business users can create their own advances
         $canEdit = true; // All business users can edit their own advances
         $canDelete = true; // All business users can delete their own advances
-        $canViewAll = $user->can('advances.view') || $user->isSuperAdmin();
+        
+        // Users can view all advances if they have manager/owner role or are super admin
+        // Otherwise, they can only view their own advances
+        $canViewAll = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
         
         // Users can always view their own advances, but need permission to view others
         $canManage = $canViewAll || in_array($userRole, ['owner', 'manager']);
@@ -133,7 +136,11 @@ class BusinessAdvanceController extends Controller
 
         // Get user's role in this business
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
-        $canViewAll = $user->can('advances.view') || $user->isSuperAdmin();
+        
+        // Users can view all advances if they have manager/owner role or are super admin
+        // Otherwise, they can only view their own advances
+        $canViewAll = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
+        
         $canManage = $canViewAll || in_array($userRole, ['owner', 'manager']);
 
         // Get users for selection
@@ -171,7 +178,11 @@ class BusinessAdvanceController extends Controller
 
         // Get user's role in this business
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
-        $canViewAll = $user->can('advances.view') || $user->isSuperAdmin();
+        
+        // Users can view all advances if they have manager/owner role or are super admin
+        // Otherwise, they can only view their own advances
+        $canViewAll = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
+        
         $canManage = $canViewAll || in_array($userRole, ['owner', 'manager']);
 
         // Validate request
@@ -240,10 +251,15 @@ class BusinessAdvanceController extends Controller
         }
 
         // Check if user can view this advance (own advance or has permission)
-        $canViewAll = $user->can('advances.view') || $user->isSuperAdmin();
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
+        
+        // Users can view all advances if they have manager/owner role or are super admin
+        // Otherwise, they can only view their own advances
+        $canViewAll = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
+        
         $canManage = $canViewAll || in_array($userRole, ['owner', 'manager']);
         
+        // Allow users to view their own advances, or managers/owners/superadmins to view any advance
         if (!$canManage && $advance->user_id !== $user->id) {
             abort(403, 'Unauthorized to view this advance.');
         }
@@ -287,8 +303,12 @@ class BusinessAdvanceController extends Controller
         // Specific permissions determine if they can edit others
 
         // Check if user can edit this advance (own advance or has permission)
-        $canViewAll = $user->can('advances.view') || $user->isSuperAdmin();
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
+        
+        // Users can view all advances if they have manager/owner role or are super admin
+        // Otherwise, they can only view their own advances
+        $canViewAll = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
+        
         $canManage = $canViewAll || in_array($userRole, ['owner', 'manager']);
         
         if (!$canManage && $advance->user_id !== $user->id) {
@@ -342,8 +362,12 @@ class BusinessAdvanceController extends Controller
         // Specific permissions determine if they can edit others
 
         // Check if user can edit this advance (own advance or has permission)
-        $canViewAll = $user->can('advances.view') || $user->isSuperAdmin();
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
+        
+        // Users can view all advances if they have manager/owner role or are super admin
+        // Otherwise, they can only view their own advances
+        $canViewAll = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
+        
         $canManage = $canViewAll || in_array($userRole, ['owner', 'manager']);
         
         if (!$canManage && $advance->user_id !== $user->id) {
@@ -358,10 +382,10 @@ class BusinessAdvanceController extends Controller
         // Validate request
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'amount' => 'required|numeric|min:0.01',
+            'amount' => 'required|numeric|min:0.01|max:999999.99',
             'type' => 'required|in:cash,bank_transfer,check,other',
-            'purpose' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'purpose' => 'required|string|max:500',
+            'description' => 'nullable|string|max:500',
             'due_date' => 'nullable|date|after:today',
             'advance_date' => 'nullable|date|before_or_equal:today',
         ]);
@@ -422,8 +446,12 @@ class BusinessAdvanceController extends Controller
         // Specific permissions determine if they can delete others
 
         // Check if user can delete this advance (own advance or has permission)
-        $canViewAll = $user->can('advances.view') || $user->isSuperAdmin();
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
+        
+        // Users can view all advances if they have manager/owner role or are super admin
+        // Otherwise, they can only view their own advances
+        $canViewAll = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
+        
         $canManage = $canViewAll || in_array($userRole, ['owner', 'manager']);
         
         if (!$canManage && $advance->user_id !== $user->id) {
@@ -452,7 +480,10 @@ class BusinessAdvanceController extends Controller
         $user = auth()->user();
         
         // Check permissions (need edit permission to approve/reject)
-        if (!$user->can('advances.edit') && !$user->isSuperAdmin()) {
+        $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
+        $canEdit = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
+        
+        if (!$canEdit && !$user->isSuperAdmin()) {
             abort(403, 'Unauthorized to update advance status.');
         }
 
@@ -512,7 +543,10 @@ class BusinessAdvanceController extends Controller
         $user = auth()->user();
         
         // Check permissions
-        if (!$user->can('advances.edit') && !$user->isSuperAdmin()) {
+        $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
+        $canEdit = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
+        
+        if (!$canEdit && !$user->isSuperAdmin()) {
             abort(403, 'Unauthorized to mark advance as paid.');
         }
 

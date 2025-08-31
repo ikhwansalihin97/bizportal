@@ -442,21 +442,21 @@ export default function ClaimsIndex({
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Expense Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Submitted</TableHead>
-                    <TableHead>Remaining</TableHead>
-                    <TableHead>Actions</TableHead>
+                  <TableRow key="header-row">
+                    <TableHead key="employee">Employee</TableHead>
+                    <TableHead key="amount">Amount</TableHead>
+                    <TableHead key="category">Category</TableHead>
+                    <TableHead key="description">Description</TableHead>
+                    <TableHead key="expense-date">Expense Date</TableHead>
+                    <TableHead key="status">Status</TableHead>
+                    <TableHead key="submitted">Submitted</TableHead>
+                    <TableHead key="remaining">Remaining</TableHead>
+                    <TableHead key="actions">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {claims.data.length === 0 ? (
-                    <TableRow>
+                    <TableRow key="no-data">
                       <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         No claims found
                       </TableCell>
@@ -491,7 +491,7 @@ export default function ClaimsIndex({
                             {claim.description}
                           </div>
                           {claim.vendor && (
-                            <div className="text-xs text-muted-foreground">
+                            <div key={`vendor-${claim.id}`} className="text-xs text-muted-foreground">
                               Vendor: {claim.vendor}
                             </div>
                           )}
@@ -517,21 +517,21 @@ export default function ClaimsIndex({
                             {formatCurrency(claim.remaining_amount)}
                           </div>
                           {claim.is_fully_reimbursed && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge key={`reimbursed-${claim.id}`} variant="secondary" className="text-xs">
                               Fully Reimbursed
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Link key="view" href={route('businesses.claims.show', [business.slug, claim.uuid])}>
+                            <Link key={`view-${claim.id}`} href={route('businesses.claims.show', [business.slug, claim.uuid])}>
                               <Button variant="ghost" size="sm">
                                 <Eye className="w-4 h-4" />
                               </Button>
                             </Link>
                             
                             {canEdit && claim.status === 'pending' && (
-                              <Link key="edit" href={route('businesses.claims.edit', [business.slug, claim.uuid])}>
+                              <Link key={`edit-${claim.id}`} href={route('businesses.claims.edit', [business.slug, claim.uuid])}>
                                 <Button variant="ghost" size="sm">
                                   <Edit className="w-4 h-4" />
                                 </Button>
@@ -540,7 +540,7 @@ export default function ClaimsIndex({
                             
                             {canDelete && claim.status === 'pending' && (
                               <Button 
-                                key="delete"
+                                key={`delete-${claim.id}`}
                                 variant="ghost" 
                                 size="sm"
                                 onClick={() => {

@@ -390,22 +390,22 @@ export default function AdvancesIndex({
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Purpose</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Requested</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Advance Date</TableHead>
-                    <TableHead>Remaining</TableHead>
-                    <TableHead>Actions</TableHead>
+                  <TableRow key="header-row">
+                    <TableHead key="employee">Employee</TableHead>
+                    <TableHead key="amount">Amount</TableHead>
+                    <TableHead key="type">Type</TableHead>
+                    <TableHead key="purpose">Purpose</TableHead>
+                    <TableHead key="status">Status</TableHead>
+                    <TableHead key="requested">Requested</TableHead>
+                    <TableHead key="due-date">Due Date</TableHead>
+                    <TableHead key="advance-date">Advance Date</TableHead>
+                    <TableHead key="remaining">Remaining</TableHead>
+                    <TableHead key="actions">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {advances.data.length === 0 ? (
-                    <TableRow>
+                    <TableRow key="no-data">
                       <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                         No advances found
                       </TableCell>
@@ -450,20 +450,20 @@ export default function AdvancesIndex({
                         </TableCell>
                         <TableCell>
                           {advance.due_date ? (
-                            <div className="text-sm">
+                            <div key={`due-date-${advance.id}`} className="text-sm">
                               {formatDate(advance.due_date)}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
+                            <span key={`no-due-date-${advance.id}`} className="text-muted-foreground text-sm">-</span>
                           )}
                         </TableCell>
                         <TableCell>
                           {advance.advance_date ? (
-                            <div className="text-sm">
+                            <div key={`advance-date-${advance.id}`} className="text-sm">
                               {formatDate(advance.advance_date)}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
+                            <span key={`no-advance-date-${advance.id}`} className="text-muted-foreground text-sm">-</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -471,21 +471,21 @@ export default function AdvancesIndex({
                             {formatCurrency(advance.remaining_amount)}
                           </div>
                           {advance.is_fully_repaid && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge key={`repaid-${advance.id}`} variant="secondary" className="text-xs">
                               Fully Repaid
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Link key="view" href={route('businesses.advances.show', [business.slug, advance.uuid])}>
+                            <Link key={`view-${advance.id}`} href={route('businesses.advances.show', [business.slug, advance.uuid])}>
                               <Button variant="ghost" size="sm">
                                 <Eye className="w-4 h-4" />
                               </Button>
                             </Link>
                             
                             {canEdit && advance.status === 'pending' && (
-                              <Link key="edit" href={route('businesses.advances.edit', [business.slug, advance.uuid])}>
+                              <Link key={`edit-${advance.id}`} href={route('businesses.advances.edit', [business.slug, advance.uuid])}>
                                 <Button variant="ghost" size="sm">
                                   <Edit className="w-4 h-4" />
                                 </Button>
@@ -494,7 +494,7 @@ export default function AdvancesIndex({
                             
                             {canDelete && advance.status === 'pending' && (
                               <Button 
-                                key="delete"
+                                key={`delete-${advance.id}`}
                                 variant="ghost" 
                                 size="sm"
                                 onClick={() => {

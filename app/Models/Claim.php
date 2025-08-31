@@ -51,10 +51,10 @@ class Claim extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'amount' => 'decimal:2',
-        'approved_amount' => 'decimal:2',
-        'reimbursed_amount' => 'decimal:2',
-        'remaining_amount' => 'decimal:2',
+        'amount' => 'float',
+        'approved_amount' => 'float',
+        'reimbursed_amount' => 'float',
+        'remaining_amount' => 'float',
         'is_fully_reimbursed' => 'boolean',
         'expense_date' => 'date',
         'submitted_at' => 'datetime',

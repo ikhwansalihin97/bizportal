@@ -43,6 +43,24 @@ interface Props {
 }
 
 export default function ClaimEdit({ business, claim, users, canManage, userRole }: Props) {
+  // Helper function to format date for HTML date input (YYYY-MM-DD)
+  const formatDateForInput = (dateString: string | null | undefined): string => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      
+      // Fix timezone issue: Use local date methods instead of toISOString()
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
+  };
+
   const { data, setData, put, processing, errors, reset } = useForm({
     user_id: claim.user.id.toString(),
     amount: claim.amount.toString(),
@@ -50,7 +68,7 @@ export default function ClaimEdit({ business, claim, users, canManage, userRole 
     expense_type: claim.expense_type,
     description: claim.description || '',
     purpose: claim.purpose || '',
-    expense_date: claim.expense_date,
+    expense_date: formatDateForInput(claim.expense_date),
     vendor: claim.vendor || '',
     invoice_number: claim.invoice_number || '',
     payment_method: claim.payment_method || '',
@@ -66,6 +84,7 @@ export default function ClaimEdit({ business, claim, users, canManage, userRole 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     put(route('businesses.claims.update', [business.slug, claim.uuid]), {
       onSuccess: () => {
         // Success message will be shown via flash message
@@ -74,7 +93,7 @@ export default function ClaimEdit({ business, claim, users, canManage, userRole 
   };
 
   const handleCancel = () => {
-    router.get(route('businesses.claims.show', [business.slug, claim.uuid]));
+    router.get(route('businesses.claims.index', business.slug));
   };
 
   return (
@@ -160,7 +179,27 @@ export default function ClaimEdit({ business, claim, users, canManage, userRole 
                       min="0.01"
                       max="999999.99"
                       value={data.amount}
-                      onChange={(e) => setData('amount', e.target.value)}
+                      onChange={(e) => {
+                        // Fix floating point precision issues
+                        const value = parseFloat(e.target.value);
+                        
+                        if (!isNaN(value)) {
+                          // Round to 2 decimal places to avoid floating point errors
+                          const roundedValue = Math.round(value * 100) / 100;
+                          setData('amount', roundedValue.toString());
+                        } else {
+                          setData('amount', e.target.value);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // Ensure proper formatting on blur
+                        const value = parseFloat(e.target.value);
+                        
+                        if (!isNaN(value)) {
+                          const roundedValue = Math.round(value * 100) / 100;
+                          setData('amount', roundedValue.toFixed(2));
+                        }
+                      }}
                       className="pl-10"
                       placeholder="0.00"
                     />
@@ -240,7 +279,7 @@ export default function ClaimEdit({ business, claim, users, canManage, userRole 
                   <Input
                     id="expense_date"
                     type="date"
-                    value={data.expense_date}
+                    value={data.expense_date ? new Date(data.expense_date).toISOString().split('T')[0] : ''}
                     onChange={(e) => setData('expense_date', e.target.value)}
                     className="mt-1"
                     max={new Date().toISOString().split('T')[0]}

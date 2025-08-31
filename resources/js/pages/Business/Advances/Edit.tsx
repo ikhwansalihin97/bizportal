@@ -41,14 +41,32 @@ interface Props {
 }
 
 export default function AdvanceEdit({ business, advance, users, canManage, canViewAll, userRole }: Props) {
+  // Helper function to format date for HTML date input (YYYY-MM-DD)
+  const formatDateForInput = (dateString: string | null | undefined): string => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      
+      // Fix timezone issue: Use local date methods instead of toISOString()
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
+  };
+
   const { data, setData, put, processing, errors, reset } = useForm({
     user_id: advance.user.id.toString(),
     amount: advance.amount.toString(),
     type: advance.type,
     purpose: advance.purpose,
     description: advance.description || '',
-    due_date: advance.due_date || '',
-    advance_date: advance.advance_date || '',
+    due_date: formatDateForInput(advance.due_date),
+    advance_date: formatDateForInput(advance.advance_date),
   });
 
   const breadcrumbs = [
@@ -61,6 +79,7 @@ export default function AdvanceEdit({ business, advance, users, canManage, canVi
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     put(route('businesses.advances.update', [business.slug, advance.uuid]), {
       onSuccess: () => {
         // Success message will be shown via flash message
@@ -69,7 +88,7 @@ export default function AdvanceEdit({ business, advance, users, canManage, canVi
   };
 
   const handleCancel = () => {
-    router.get(route('businesses.advances.show', [business.slug, advance.uuid]));
+    router.get(route('businesses.advances.index', business.slug));
   };
 
   return (
@@ -155,7 +174,9 @@ export default function AdvanceEdit({ business, advance, users, canManage, canVi
                       min="0.01"
                       max="999999.99"
                       value={data.amount}
-                      onChange={(e) => setData('amount', e.target.value)}
+                      onChange={(e) => {
+                        setData('amount', e.target.value);
+                      }}
                       className="pl-10"
                       placeholder="0.00"
                     />

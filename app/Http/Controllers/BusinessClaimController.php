@@ -32,7 +32,10 @@ class BusinessClaimController extends Controller
         $canCreate = true; // All business users can create their own claims
         $canEdit = true; // All business users can edit their own claims
         $canDelete = true; // All business users can delete their own claims
-        $canViewAll = $user->can('claims.view') || $user->isSuperAdmin();
+        
+        // Users can view all claims if they have manager/owner role or are super admin
+        // Otherwise, they can only view their own claims
+        $canViewAll = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
         
         // Users can always view their own claims, but need permission to view others
         $canManage = $canViewAll || in_array($userRole, ['owner', 'manager']);
@@ -139,7 +142,11 @@ class BusinessClaimController extends Controller
 
         // Get user's role in this business
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
-        $canViewAll = $user->can('claims.view') || $user->isSuperAdmin();
+        
+        // Users can view all claims if they have manager/owner role or are super admin
+        // Otherwise, they can only view their own claims
+        $canViewAll = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
+        
         $canManage = $canViewAll || in_array($userRole, ['owner', 'manager']);
 
         // Get users for selection
@@ -177,7 +184,11 @@ class BusinessClaimController extends Controller
 
         // Get user's role in this business
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
-        $canViewAll = $user->can('claims.view') || $user->isSuperAdmin();
+        
+        // Users can view all claims if they have manager/owner role or are super admin
+        // Otherwise, they can only view their own claims
+        $canViewAll = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
+        
         $canManage = $canViewAll || in_array($userRole, ['owner', 'manager']);
 
         // Validate request
@@ -242,11 +253,6 @@ class BusinessClaimController extends Controller
     {
         $user = auth()->user();
         
-        // Check permissions
-        if (!$user->can('claims.view') && !$user->isSuperAdmin()) {
-            abort(403, 'Unauthorized to view claims.');
-        }
-
         // Check if claim belongs to this business
         if ($claim->business_id !== $business->id) {
             abort(404);
@@ -256,6 +262,7 @@ class BusinessClaimController extends Controller
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
         $canManage = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
         
+        // Allow users to view their own claims, or managers/owners/superadmins to view any claim
         if (!$canManage && $claim->user_id !== $user->id) {
             abort(403, 'Unauthorized to view this claim.');
         }
@@ -412,7 +419,10 @@ class BusinessClaimController extends Controller
         $user = auth()->user();
         
         // Check permissions
-        if (!$user->can('claims.delete') && !$user->isSuperAdmin()) {
+        $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
+        $canDelete = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
+        
+        if (!$canDelete && !$user->isSuperAdmin()) {
             abort(403, 'Unauthorized to delete claims.');
         }
 
@@ -454,7 +464,10 @@ class BusinessClaimController extends Controller
         $user = auth()->user();
         
         // Check permissions (need edit permission to approve/reject)
-        if (!$user->can('claims.edit') && !$user->isSuperAdmin()) {
+        $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
+        $canEdit = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
+        
+        if (!$canEdit && !$user->isSuperAdmin()) {
             abort(403, 'Unauthorized to update claim status.');
         }
 
@@ -519,7 +532,10 @@ class BusinessClaimController extends Controller
         $user = auth()->user();
         
         // Check permissions
-        if (!$user->can('claims.edit') && !$user->isSuperAdmin()) {
+        $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
+        $canEdit = in_array($userRole, ['owner', 'manager']) || $user->isSuperAdmin();
+        
+        if (!$canEdit && !$user->isSuperAdmin()) {
             abort(403, 'Unauthorized to mark claim as paid.');
         }
 

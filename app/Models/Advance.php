@@ -47,9 +47,9 @@ class Advance extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'amount' => 'decimal:2',
-        'repaid_amount' => 'decimal:2',
-        'remaining_amount' => 'decimal:2',
+        'amount' => 'float',
+        'repaid_amount' => 'float',
+        'remaining_amount' => 'float',
         'is_fully_repaid' => 'boolean',
         'requested_at' => 'datetime',
         'approved_at' => 'datetime',
