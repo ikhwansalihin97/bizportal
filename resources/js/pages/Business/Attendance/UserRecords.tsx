@@ -99,18 +99,23 @@ export default function UserRecords({
   const formatTime = (time: string | null) => {
     if (!time) return '--:--';
     
-    // Parse the UTC datetime and show the actual UTC time without conversion
+    // Parse the datetime - data is stored in Malaysia timezone in database
     const date = new Date(time);
     
-    // Get UTC components to avoid timezone conversion
+    // Since we're using timestamp columns, the time might be stored as UTC
+    // We need to convert it back to Malaysia timezone for display
+    // Malaysia is UTC+8, so we add 8 hours to get the correct local time
+    
+    // Get the UTC time and convert to Malaysia time
     const utcHours = date.getUTCHours();
-    const utcMinutes = date.getUTCMinutes();
+    const utcMinutes = date.getMinutes();
     
-    // Format as "HH:mm UTC"
-    const hours = utcHours.toString().padStart(2, '0');
-    const minutes = utcMinutes.toString().padStart(2, '0');
+    // Convert to Malaysia time (UTC+8)
+    const malaysiaHours = (utcHours + 8) % 24;
+    const malaysiaMinutes = utcMinutes;
     
-    return `${hours}:${minutes} UTC`;
+    // Format as "HH:mm" in Malaysia time
+    return `${malaysiaHours.toString().padStart(2, '0')}:${malaysiaMinutes.toString().padStart(2, '0')}`;
   };
 
   const getInitials = (name: string) => {

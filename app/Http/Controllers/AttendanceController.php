@@ -36,8 +36,8 @@ class AttendanceController extends Controller
         // Get recent attendance for the last 7 days
         $recentAttendance = Attendance::where('business_id', $business->id)
             ->whereBetween('work_date', [
-                Carbon::now()->subDays(6)->startOfDay(),
-                Carbon::now()->endOfDay()
+                Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->subDays(6)->startOfDay(),
+                Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->endOfDay()
             ])
             ->with(['user'])
             ->orderBy('work_date', 'desc')
@@ -59,9 +59,9 @@ class AttendanceController extends Controller
         // Calculate stats
         $stats = [
             'total_employees' => $business->users()->count(),
-            'present_today' => $todayAttendance->whereNotNull('start_time')->count(),
-            'absent_today' => $business->users()->count() - $todayAttendance->whereNotNull('start_time')->count(),
-            'pending_approval' => $todayAttendance->where('status', 'pending')->count(),
+            'present_today' => $todayAttendance->whereNotNull('start_time')->pluck('user_id')->unique()->count(),
+            'absent_today' => $business->users()->count() - $todayAttendance->whereNotNull('start_time')->pluck('user_id')->unique()->count(),
+            'pending_approval' => $todayAttendance->where('status', 'pending')->pluck('user_id')->unique()->count(),
         ];
 
         return Inertia::render('Business/Attendance/Index', [
@@ -219,10 +219,12 @@ class AttendanceController extends Controller
     {
         $user = auth()->user();
 
+        // Get current time in Malaysia timezone
+        $now = Carbon::now()->setTimezone('Asia/Kuala_Lumpur');
+
         \Log::info('Clock-in attempt started', [
             'user_id' => $user->id,
             'business_id' => $business->id,
-            'user_roles' => $user->getRoleNames()->toArray(),
         ]);
 
         try {
@@ -241,12 +243,14 @@ class AttendanceController extends Controller
                 'user_id' => $user->id,
                 'business_id' => $business->id,
                 'salary_rate_id' => $salaryRate?->id,
-                'work_date' => Carbon::now()->setTimezone('Asia/Kuala_Lumpur')->toDateString(),
-                'start_time' => Carbon::now(),
+                'work_date' => $now->toDateString(),
+                'start_time' => $now->format('Y-m-d H:i:s'), // Store as Malaysia time, not UTC
                 'status' => 'pending',
             ];
 
-            \Log::info('Creating new attendance record for clock-in', $attendanceData);
+            \Log::info('Creating new attendance record for clock-in', [
+                'attendance_data' => $attendanceData,
+            ]);
 
             // Create new attendance record (allows multiple clock-ins per day)
             $attendance = Attendance::create($attendanceData);
@@ -258,7 +262,7 @@ class AttendanceController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully clocked in at ' . Carbon::now()->format('H:i'),
+                'message' => 'Successfully clocked in at ' . $now->format('H:i'),
                 'attendance' => $attendance->fresh()->load('user'),
             ]);
         } catch (\Exception $e) {
@@ -293,16 +297,14 @@ class AttendanceController extends Controller
                 return response()->json(['error' => 'No incomplete attendance record found. Please clock in first.'], 404);
             }
 
-            // Calculate hours worked
-            $endTime = Carbon::now();
-            $startTime = Carbon::parse($attendance->start_time);
+            // Calculate hours worked using Malaysia timezone
+            $endTime = Carbon::now()->setTimezone('Asia/Kuala_Lumpur');
+            $startTime = Carbon::parse($attendance->start_time)->setTimezone('Asia/Kuala_Lumpur');
             
             \Log::info('Clock-out calculation:', [
-                'start_time' => $attendance->start_time,
-                'end_time' => $endTime->toISOString(),
-                'startTime_parsed' => $startTime->toISOString(),
-                'endTime_parsed' => $endTime->toISOString(),
-                'startTime < endTime' => $startTime < $endTime,
+                'user_id' => $user->id,
+                'business_id' => $business->id,
+                'attendance_id' => $attendance->id,
             ]);
             
             if ($startTime < $endTime) {
@@ -320,10 +322,6 @@ class AttendanceController extends Controller
                 $overtimeUnits = round($overtimeHours, 2);
                 
                 \Log::info('Clock-out hours calculated:', [
-                    'totalMinutes' => $totalMinutes,
-                    'totalHours' => $totalHours,
-                    'regularHours' => $regularHours,
-                    'overtimeHours' => $overtimeHours,
                     'regularUnits' => $regularUnits,
                     'overtimeUnits' => $overtimeUnits,
                 ]);
@@ -336,7 +334,7 @@ class AttendanceController extends Controller
 
             // Update attendance record
             $attendance->update([
-                'end_time' => $endTime,
+                'end_time' => $endTime->format('Y-m-d H:i:s'), // Store as Malaysia time, not UTC
                 'regular_units' => $regularUnits,
                 'overtime_units' => $overtimeUnits,
             ]);
@@ -449,8 +447,13 @@ class AttendanceController extends Controller
 
         // Calculate hours automatically if both start and end times are provided
         if (!empty($validated['start_time']) && !empty($validated['end_time'])) {
-            $startTime = \Carbon\Carbon::parse($validated['start_time']);
-            $endTime = \Carbon\Carbon::parse($validated['end_time']);
+            // Convert from local timezone to Malaysia timezone before storing
+            $startTime = \Carbon\Carbon::parse($validated['start_time'])->setTimezone('Asia/Kuala_Lumpur');
+            $endTime = \Carbon\Carbon::parse($validated['end_time'])->setTimezone('Asia/Kuala_Lumpur');
+            
+            // Update the validated data with Malaysia timezone times
+            $validated['start_time'] = $startTime->format('Y-m-d H:i:s'); // Store as Malaysia time, not UTC
+            $validated['end_time'] = $endTime->format('Y-m-d H:i:s'); // Store as Malaysia time, not UTC
             
             if ($startTime < $endTime) {
                 // Use the correct order: endTime->diffInMinutes(startTime) gives positive value
@@ -466,9 +469,22 @@ class AttendanceController extends Controller
                 
                 $validated['regular_units'] = round($regularHours, 2);
                 $validated['overtime_units'] = round($overtimeHours, 2);
+                
+                \Log::info('Attendance update - hours calculated:', [
+                    'user_id' => $user->id,
+                    'attendance_id' => $attendance->id,
+                    'total_hours' => $totalHours,
+                    'regular_units' => $validated['regular_units'],
+                    'overtime_units' => $validated['overtime_units'],
+                ]);
             } else {
                 $validated['regular_units'] = 0;
                 $validated['overtime_units'] = 0;
+                
+                \Log::info('Attendance update - invalid time range:', [
+                    'user_id' => $user->id,
+                    'attendance_id' => $attendance->id,
+                ]);
             }
         } else {
             // If times are not provided, reset hours

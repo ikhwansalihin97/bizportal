@@ -24,6 +24,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Set the application timezone consistently
+        date_default_timezone_set('Asia/Kuala_Lumpur');
+                
         // Register policies
         Gate::policy(Business::class, BusinessPolicy::class);
         Gate::policy(User::class, UserPolicy::class);

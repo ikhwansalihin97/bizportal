@@ -80,9 +80,14 @@ export default function AttendanceEdit({
     if (!dateTimeString) return '';
     
     // Parse the datetime and format for datetime-local input
-    // Since we're storing in Malaysia timezone, just format directly
+    // Since we're storing in Malaysia timezone, we need to convert to local timezone for the input
     const date = new Date(dateTimeString);
-    return date.toISOString().slice(0, 16);
+    
+    // Convert from Malaysia timezone (UTC+8) to local timezone for the input field
+    // This ensures the input shows the correct local time
+    const localDate = new Date(date.getTime() - (8 * 60 * 60 * 1000));
+    
+    return localDate.toISOString().slice(0, 16);
   };
 
   // Helper function to format time for display (showing database values directly)
@@ -177,7 +182,7 @@ export default function AttendanceEdit({
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Edit Attendance Record</h1>
               <p className="text-muted-foreground">
-                {isOwnRecord ? 'Edit your attendance record' : `Edit attendance for ${attendance.user.name}`}
+                Edit attendance record for {attendance.user.name}
               </p>
             </div>
           </div>

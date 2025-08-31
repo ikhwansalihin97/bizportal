@@ -61,7 +61,7 @@ export default function AttendanceIndex({
   business,
   isBusinessMember,
   todayAttendance,
-  currentUserAttendance,
+  currentUserAttendance: initialCurrentUserAttendance,
   stats,
   recentAttendance: initialRecentAttendance,
   userRole,
@@ -73,6 +73,8 @@ export default function AttendanceIndex({
   const [clockOutNotes, setClockOutNotes] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [recentAttendance, setRecentAttendance] = useState(initialRecentAttendance);
+  const [currentUserAttendance, setCurrentUserAttendance] = useState(initialCurrentUserAttendance);
+  const [isCurrentlyClockedIn, setIsCurrentlyClockedIn] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -110,23 +112,55 @@ export default function AttendanceIndex({
     return () => clearInterval(timer);
   }, []);
 
+  // Update clock-in status when recentAttendance changes or on initial load
+  useEffect(() => {
+    setIsCurrentlyClockedIn(hasIncompleteAttendance());
+  }, [recentAttendance, auth.user?.id]);
+
+  // Helper function to check if current user has incomplete attendance
+  const hasIncompleteAttendance = () => {
+    if (!recentAttendance) return false;
+    
+    return Object.values(recentAttendance).some(attendances => 
+      attendances.some(att => 
+        att.user_id === auth.user?.id && !att.end_time
+      )
+    );
+  };
+
   const handleClockIn = async () => {
     setIsClockingIn(true);
     try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      
       const response = await fetch(`/businesses/${business.slug}/attendance/clock-in`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          'X-CSRF-TOKEN': csrfToken,
         },
         body: JSON.stringify({}),
       });
+
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // Response is not JSON, likely an HTML error page
+        const textResponse = await response.text();
+        throw new Error('Server error: Received HTML response instead of JSON');
+      }
 
       const data = await response.json();
 
       if (response.ok && data.success) {
         // Success - update the attendance data dynamically
         const newAttendance = data.attendance;
+        
+        // Update the currentUserAttendance state
+        setCurrentUserAttendance(newAttendance);
+        
+        // Immediately set clock-in status
+        setIsCurrentlyClockedIn(true);
         
         // Update the recentAttendance state with the new data
         if (recentAttendance) {
@@ -150,6 +184,21 @@ export default function AttendanceIndex({
         // Show success message
         setSuccessMessage(data.message || 'Successfully clocked in!');
         clearSuccessMessage();
+        
+        // Show reload message
+        setTimeout(() => {
+          setSuccessMessage('Page will reload in a moment to show updated data...');
+        }, 1000);
+        
+        // Force a re-render by updating the state
+        setTimeout(() => {
+          setRecentAttendance(prev => ({ ...prev }));
+        }, 100);
+        
+        // Reload the page after a short delay to ensure all data is updated
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
       } else {
         // Error
         setErrorMessage(data.error || 'Failed to clock in');
@@ -157,7 +206,7 @@ export default function AttendanceIndex({
       }
     } catch (error) {
       console.error('Clock in error:', error);
-      setErrorMessage('Failed to clock in');
+      setErrorMessage(error.message || 'Failed to clock in');
       clearErrorMessage();
     } finally {
       setIsClockingIn(false);
@@ -167,20 +216,36 @@ export default function AttendanceIndex({
   const handleClockOut = async () => {
     setIsClockingOut(true);
     try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      
       const response = await fetch(`/businesses/${business.slug}/attendance/clock-out`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+          'X-CSRF-TOKEN': csrfToken,
         },
         body: JSON.stringify({ notes: clockOutNotes }),
       });
+
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // Response is not JSON, likely an HTML error page
+        const textResponse = await response.text();
+        throw new Error('Server error: Received HTML response instead of JSON');
+      }
 
       const data = await response.json();
 
       if (response.ok && data.success) {
         // Success - update the attendance data dynamically
         const updatedAttendance = data.attendance;
+        
+        // Update the currentUserAttendance state to reflect clock out
+        setCurrentUserAttendance(prev => prev ? { ...prev, end_time: updatedAttendance.end_time } : null);
+        
+        // Immediately set clock-out status
+        setIsCurrentlyClockedIn(false);
         
         // Update the recentAttendance state with the new data
         if (recentAttendance) {
@@ -207,6 +272,21 @@ export default function AttendanceIndex({
         // Show success message
         setSuccessMessage(data.message || 'Successfully clocked out!');
         clearSuccessMessage();
+        
+        // Show reload message
+        setTimeout(() => {
+          setSuccessMessage('Page will reload in a moment to show updated data...');
+        }, 1000);
+        
+        // Force a re-render by updating the state
+        setTimeout(() => {
+          setRecentAttendance(prev => ({ ...prev }));
+        }, 100);
+        
+        // Reload the page after a short delay to ensure all data is updated
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
       } else {
         // Error
         setErrorMessage(data.error || 'Failed to clock out');
@@ -214,7 +294,7 @@ export default function AttendanceIndex({
       }
     } catch (error) {
       console.error('Clock out error:', error);
-      setErrorMessage('Failed to clock out');
+      setErrorMessage(error.message || 'Failed to clock out');
       clearErrorMessage();
     } finally {
       setIsClockingOut(false);
@@ -302,9 +382,23 @@ export default function AttendanceIndex({
   const formatTime = (time: string | null) => {
     if (!time) return '--:--';
     
-    // Parse the datetime and show as stored in database (Malaysia time)
+    // Parse the datetime - data is stored in Malaysia timezone in database
     const date = new Date(time);
-    return format(date, 'HH:mm');
+    
+    // Since we're using timestamp columns, the time might be stored as UTC
+    // We need to convert it back to Malaysia timezone for display
+    // Malaysia is UTC+8, so we add 8 hours to get the correct local time
+    
+    // Get the UTC time and convert to Malaysia time
+    const utcHours = date.getUTCHours();
+    const utcMinutes = date.getMinutes();
+    
+    // Convert to Malaysia time (UTC+8)
+    const malaysiaHours = (utcHours + 8) % 24;
+    const malaysiaMinutes = utcMinutes;
+    
+    // Format as "HH:mm" in Malaysia time
+    return `${malaysiaHours.toString().padStart(2, '0')}:${malaysiaMinutes.toString().padStart(2, '0')}`;
   };
 
   const formatTotalHours = (attendance: Attendance) => {
@@ -465,17 +559,32 @@ export default function AttendanceIndex({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Always show Clock In button */}
-              <div className="mb-6">
-                <Button 
-                  onClick={handleClockIn}
-                  disabled={isClockingIn}
-                  size="lg"
-                  className="w-full md:w-auto"
-                >
-                  {isClockingIn ? 'Clocking In...' : 'Clock In'}
-                </Button>
-              </div>
+              {/* Clock In button - only show if no incomplete attendance */}
+              {!isCurrentlyClockedIn && (
+                <div className="mb-6">
+                  <Button 
+                    onClick={handleClockIn}
+                    disabled={isClockingIn}
+                    size="lg"
+                    className="w-full md:w-auto"
+                  >
+                    {isClockingIn ? 'Clocking In...' : 'Clock In'}
+                  </Button>
+                </div>
+              )}
+
+              {/* Show message if user is already clocked in */}
+              {isCurrentlyClockedIn && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-blue-700">
+                    <Clock className="h-5 w-5" />
+                    <span className="font-medium">You are currently clocked in</span>
+                  </div>
+                  <p className="text-sm text-blue-600 mt-1">
+                    Use the Clock Out button below to end your work session
+                  </p>
+                </div>
+              )}
 
               {recentAttendance && Object.keys(recentAttendance).length > 0 ? (
                 <div className="space-y-4">
@@ -521,7 +630,7 @@ export default function AttendanceIndex({
                               </div>
                               
                               {/* Clock Out button for incomplete records */}
-                              {!attendance.end_time && (
+                              {!attendance.end_time && attendance.user_id === auth.user?.id && (
                                 <div className="flex items-center gap-4">
                                   <Button 
                                     onClick={() => handleClockOut()}
