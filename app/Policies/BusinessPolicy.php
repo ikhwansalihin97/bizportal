@@ -98,6 +98,11 @@ class BusinessPolicy
             return true;
         }
 
+        // Users with relevant permissions can view users
+        if ($user->can('users.view') || $user->can('users.create') || $user->can('users.invite')) {
+            return true;
+        }
+
         // Users can view other users in businesses they belong to
         return $user->belongsToBusiness($business);
     }
@@ -112,7 +117,17 @@ class BusinessPolicy
             return true;
         }
 
-        // Business owners and admins can invite users
+        // Business owners can invite users
+        if ($user->hasRoleInBusiness($business, 'owner')) {
+            return true;
+        }
+
+        // Users with specific permissions can invite users
+        if ($user->can('users.create') || $user->can('users.invite')) {
+            return true;
+        }
+
+        // Fallback to canManageBusiness for backward compatibility
         return $user->canManageBusiness($business);
     }
 

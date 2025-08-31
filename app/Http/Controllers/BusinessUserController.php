@@ -69,15 +69,6 @@ class BusinessUserController extends Controller
         $isSuperAdmin = $user->isSuperAdmin();
         $canCreatePermission = $user->can('users.create');
         $allPermissions = $user->getAllPermissions()->pluck('name')->toArray();
-        
-        \Log::info('BusinessUserController debug', [
-            'user_id' => $user->id,
-            'user_email' => $user->email,
-            'isSuperAdmin' => $isSuperAdmin,
-            'canCreatePermission' => $canCreatePermission,
-            'allPermissions' => $allPermissions,
-            'canCreateUsers' => $isSuperAdmin || $canCreatePermission
-        ]);
 
         return Inertia::render('Business/Users/Index', [
             'business' => $business,
@@ -91,7 +82,7 @@ class BusinessUserController extends Controller
     /**
      * Show form to invite a user to the business.
      */
-    public function create(Business $business): Response
+    public function invite(Business $business): Response
     {
         $this->authorize('inviteUsers', $business);
 
@@ -146,7 +137,7 @@ class BusinessUserController extends Controller
     /**
      * Invite a user to join the business.
      */
-    public function store(Business $business, Request $request)
+    public function sendInvite(Business $business, Request $request)
     {
         $this->authorize('inviteUsers', $business);
 

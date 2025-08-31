@@ -109,10 +109,6 @@ export default function BusinessUsersIndex({
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [userToRemove, setUserToRemove] = useState<BusinessUser | null>(null);
 
-  // Debug logging
-  console.log('BusinessUsersIndex props:', { canManageUsers, canCreateUsers });
-  console.log('Auth user:', usePage().props.auth);
-
   const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
     { title: 'Businesses', href: '/businesses' },

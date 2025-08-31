@@ -102,20 +102,13 @@ export default function UserRecords({
     // Parse the datetime - data is stored in Malaysia timezone in database
     const date = new Date(time);
     
-    // Since we're using timestamp columns, the time might be stored as UTC
-    // We need to convert it back to Malaysia timezone for display
-    // Malaysia is UTC+8, so we add 8 hours to get the correct local time
-    
-    // Get the UTC time and convert to Malaysia time
-    const utcHours = date.getUTCHours();
-    const utcMinutes = date.getMinutes();
-    
-    // Convert to Malaysia time (UTC+8)
-    const malaysiaHours = (utcHours + 8) % 24;
-    const malaysiaMinutes = utcMinutes;
+    // Format the time as stored in the database (Malaysia timezone)
+    // No conversion needed since database already stores correct time
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
     
     // Format as "HH:mm" in Malaysia time
-    return `${malaysiaHours.toString().padStart(2, '0')}:${malaysiaMinutes.toString().padStart(2, '0')}`;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
   const getInitials = (name: string) => {

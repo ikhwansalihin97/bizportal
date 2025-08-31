@@ -36,6 +36,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Attendance Management
         Route::prefix('{business}/attendance')->group(function () {
             Route::get('/', [AttendanceController::class, 'index'])->name('attendance.index');
+            Route::get('/my-records', [AttendanceController::class, 'myRecords'])->name('attendance.myRecords');
             Route::get('/report', [AttendanceController::class, 'report'])->name('attendance.report');
             Route::get('/user/{user}/records', [AttendanceController::class, 'userRecords'])->name('attendance.userRecords');
             Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('attendance.clockIn');

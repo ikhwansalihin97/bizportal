@@ -80,14 +80,18 @@ export default function AttendanceEdit({
     if (!dateTimeString) return '';
     
     // Parse the datetime and format for datetime-local input
-    // Since we're storing in Malaysia timezone, we need to convert to local timezone for the input
+    // Database stores times in Malaysia timezone, so we show them as-is
     const date = new Date(dateTimeString);
     
-    // Convert from Malaysia timezone (UTC+8) to local timezone for the input field
-    // This ensures the input shows the correct local time
-    const localDate = new Date(date.getTime() - (8 * 60 * 60 * 1000));
+    // Format the date for datetime-local input in local timezone
+    // This ensures the input shows the same time as stored in the database
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
     
-    return localDate.toISOString().slice(0, 16);
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   // Helper function to format time for display (showing database values directly)

@@ -21,10 +21,10 @@ class AttendanceController extends Controller
         $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
         $canManage = in_array($userRole, ['owner']) || $user->hasRole('superadmin');
         
-        // Check if user can view attendance (superadmin, business member, or has attendance.view permission)
+        // Check if user can view attendance (superadmin, business member, or has attendances.view permission)
         $canView = $user->hasRole('superadmin') || 
                    $business->users()->where('user_id', $user->id)->exists() || 
-                   $user->can('attendance.view');
+                   $user->can('attendances.view');
         
         if (!$canView) {
             abort(403, 'Unauthorized to view attendance records.');
@@ -88,7 +88,7 @@ class AttendanceController extends Controller
         // Check if user can view attendance reports
         $canView = $user->hasRole('superadmin') || 
                    $business->users()->where('user_id', $user->id)->exists() || 
-                   $user->can('attendance.view');
+                   $user->can('attendances.view');
         
         if (!$canView) {
             abort(403, 'Unauthorized to view attendance reports.');
@@ -177,38 +177,245 @@ class AttendanceController extends Controller
         $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
 
         // Get user's attendance records
-        $attendance = Attendance::where('business_id', $business->id)
+        $query = Attendance::where('business_id', $business->id)
             ->where('user_id', $user->id)
-            ->whereBetween('work_date', [$startDate, $endDate])
-            ->orderBy('work_date', 'desc')
+            ->whereBetween('work_date', [$startDate, $endDate]);
+
+        // Apply status filter if provided
+        if ($request->has('status') && $request->get('status') !== 'all') {
+            $query->where('status', $request->get('status'));
+        }
+
+        // Get paginated results
+        $attendance = $query->orderBy('work_date', 'desc')
             ->paginate(15)
             ->withQueryString();
 
         // Calculate monthly stats
         $monthlyStats = [
-            'total_days' => $attendance->total(),
-            'present_days' => Attendance::where('business_id', $business->id)
-                ->where('user_id', $user->id)
-                ->whereBetween('work_date', [$startDate, $endDate])
-                ->whereNotNull('start_time')
-                ->count(),
-            'total_hours' => Attendance::where('business_id', $business->id)
-                ->where('user_id', $user->id)
-                ->whereBetween('work_date', [$startDate, $endDate])
-                ->sum('regular_units') + 
-                Attendance::where('business_id', $business->id)
-                ->where('user_id', $user->id)
-                ->whereBetween('work_date', [$startDate, $endDate])
-                ->sum('overtime_units'),
+            'total_days' => $query->count(),
+            'present_days' => $query->whereNotNull('start_time')->count(),
+            'total_hours' => $query->sum('regular_units') + $query->sum('overtime_units'),
         ];
 
         return Inertia::render('Business/Attendance/UserRecords', [
             'business' => $business,
-            'user' => $user->load('profile'),
+            'user' => $user,
             'attendance' => $attendance,
             'monthlyStats' => $monthlyStats,
             'userRole' => $userRole,
             'canManage' => $canManage,
+        ]);
+    }
+
+    /**
+     * Display current user's own attendance records or other employees' records for admins.
+     */
+    public function myRecords(Request $request, Business $business)
+    {
+        $user = auth()->user();
+        
+        // Ensure user is a member of this business
+        if (!$business->users()->where('user_id', $user->id)->exists() && !$user->hasRole('superadmin')) {
+            abort(403, 'You are not a member of this business.');
+        }
+
+        // Check if user can manage other users (for viewing other employees' records)
+        $canManageUsers = $user->hasRole('superadmin') || 
+                         $business->users()->where('user_id', $user->id)->first()->pivot->business_role === 'owner' ||
+                         $user->can('users.view') || $user->can('users.edit');
+
+        // Check if user can view all employees (superadmin or has attendances.view permission)
+        $canViewAllEmployees = $user->isSuperAdmin() || $user->can('attendances.view');
+
+        // If user can't view all employees, force them to only see their own records
+        if (!$canViewAllEmployees) {
+            $selectedUserId = 'me';
+        }
+
+        // Get filter parameters
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+        $statusFilter = $request->get('status', 'all');
+        $selectedUserId = $request->get('user_id');
+
+        // Determine which user's records to show
+        $targetUserId = null;
+        if ($selectedUserId === 'all' && $canViewAllEmployees) {
+            // Show all employees' records
+            $targetUserId = null;
+        } elseif ($selectedUserId && $selectedUserId !== 'me' && $canViewAllEmployees) {
+            // Show specific user's records
+            $targetUserId = $selectedUserId;
+        } else {
+            // Default to current user's records
+            $targetUserId = $user->id;
+        }
+        
+        // If trying to view another user's records, check permissions
+        if ($targetUserId && $targetUserId != $user->id && !$canManageUsers) {
+            abort(403, 'You are not authorized to view other employees\' attendance records.');
+        }
+
+        // Build query for target user's attendance
+        $query = Attendance::where('business_id', $business->id);
+        
+        // Always load user information for display purposes
+        $query->with('user');
+        
+        // If viewing all employees and user has permission, show all records
+        if ($selectedUserId === 'all' && $canManageUsers) {
+            // Show all employees' records - no user_id filter needed
+        } elseif ($targetUserId) {
+            // Show specific user's records (including current user)
+            $query->where('user_id', $targetUserId);
+        } else {
+            // This should never happen, but fallback to current user's records
+            $query->where('user_id', $user->id);
+        }
+        
+        $query->whereBetween('work_date', [$startDate, $endDate]);
+
+        // Apply status filter if provided
+        if ($statusFilter !== 'all') {
+            $query->where('status', $statusFilter);
+        }
+
+        // Get paginated results
+        $attendance = $query->orderBy('work_date', 'desc')
+            ->paginate(15)
+            ->withQueryString();
+
+        // Calculate summary stats
+        $summaryQuery = Attendance::where('business_id', $business->id);
+        
+        // Always load user information for consistency
+        $summaryQuery->with('user');
+        
+        // If viewing all employees and user has permission, show all records
+        if ($selectedUserId === 'all' && $canManageUsers) {
+            // Show all employees' records - no user_id filter needed
+        } elseif ($targetUserId) {
+            // Show specific user's records
+            $summaryQuery->where('user_id', $targetUserId);
+        } else {
+            // Fallback to current user's records
+            $summaryQuery->where('user_id', $user->id);
+        }
+        
+        $summaryQuery->whereBetween('work_date', [$startDate, $endDate]);
+
+        if ($statusFilter !== 'all') {
+            $summaryQuery->where('status', $statusFilter);
+        }
+
+        // Get the base query for calculations
+        $baseQuery = clone $summaryQuery;
+        
+        // For "all employees" view, we need to count unique dates across all users
+        if ($selectedUserId === 'all' && $canViewAllEmployees) {
+            // Calculate total days (unique work dates across all employees)
+            $totalDays = (clone $baseQuery)->distinct('work_date')->count('work_date');
+            
+            // Calculate present days (unique work dates with start_time across all employees)
+            $presentDays = (clone $baseQuery)->whereNotNull('start_time')->distinct('work_date')->count('work_date');
+            
+            // Calculate approved days (unique work dates with approved status across all employees)
+            $approvedDays = (clone $baseQuery)->where('status', 'approved')->distinct('work_date')->count('work_date');
+            
+            // Calculate pending days (unique work dates with pending status across all employees)
+            $pendingDays = (clone $baseQuery)->where('status', 'pending')->distinct('work_date')->count('work_date');
+        } else {
+            // For single user view, count unique dates for that user
+            $totalDays = (clone $baseQuery)->distinct('work_date')->count('work_date');
+            
+            // Calculate present days (unique work dates with start_time for that user)
+            $presentDays = (clone $baseQuery)->whereNotNull('start_time')->distinct('work_date')->count('work_date');
+            
+            // Calculate approved days (unique work dates with approved status for that user)
+            $approvedDays = (clone $baseQuery)->where('status', 'approved')->distinct('work_date')->count('work_date');
+            
+            // Calculate pending days (unique work dates with pending status for that user)
+            $pendingDays = (clone $baseQuery)->where('status', 'pending')->distinct('work_date')->count('work_date');
+        }
+        
+        // Calculate total hours (sum of all regular and overtime units)
+        $totalHours = (clone $baseQuery)->sum('regular_units') + (clone $baseQuery)->sum('overtime_units');
+        
+        // Fallback: if sum returns 0, try to calculate manually from individual records
+        if ($totalHours == 0) {
+            $records = (clone $baseQuery)->get(['regular_units', 'overtime_units']);
+            $totalHours = $records->sum(function($record) {
+                return (float)($record->regular_units ?? 0) + (float)($record->overtime_units ?? 0);
+            });
+        }
+        
+        // Calculate average hours per day (only for days with hours)
+        $averageHoursPerDay = $presentDays > 0 ? $totalHours / $presentDays : 0;
+        
+        // Additional debug info for multiple records per day
+        \Log::info('Multiple records per day debug', [
+            'totalRecords' => $baseQuery->count(),
+            'uniqueDates' => $totalDays,
+            'recordsPerDay' => $totalDays > 0 ? $baseQuery->count() / $totalDays : 0,
+            'sampleDates' => $baseQuery->select('work_date')->distinct()->limit(5)->pluck('work_date')->toArray()
+        ]);
+
+        $summary = [
+            'total_days' => $totalDays,
+            'present_days' => $presentDays,
+            'approved_days' => $approvedDays,
+            'pending_days' => $pendingDays,
+            'total_hours' => $totalHours,
+            'average_hours_per_day' => $averageHoursPerDay,
+            // Additional record-based statistics
+            'total_records' => $baseQuery->count(),
+            'records_per_day' => $totalDays > 0 ? round($baseQuery->count() / $totalDays, 1) : 0,
+        ];
+
+        // Get list of users for the employee filter (only if user can view all employees)
+        $users = null;
+        $selectedUser = null;
+        
+        if ($canViewAllEmployees) {
+            $users = $business->users()
+                ->where('users.id', '!=', $user->id) // Exclude current user to avoid redundancy
+                ->select('users.id', 'users.name', 'users.email')
+                ->orderBy('users.name')
+                ->get();
+
+            // Get selected user info if viewing specific user
+            if ($targetUserId && $targetUserId !== $user->id) {
+                $selectedUser = $users->firstWhere('id', $targetUserId);
+                if (!$selectedUser) {
+                    // If not in business users, get from main users table
+                    $selectedUser = \App\Models\User::select('id', 'name', 'email')
+                        ->where('id', $targetUserId)
+                        ->first();
+                }
+            }
+        }
+
+        return Inertia::render('Business/Attendance/MyAttendance', [
+            'business' => $business,
+            'attendance' => $attendance,
+            'filters' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'status' => $statusFilter,
+                'user_id' => $selectedUserId,
+            ],
+            'summary' => $summary,
+            'users' => $canManageUsers ? $users : null,
+            'canManageUsers' => $canManageUsers,
+            'selectedUser' => $selectedUser,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'isSuperAdmin' => $user->isSuperAdmin(),
+                'permissions' => $user->permissions->pluck('name')->toArray(),
+            ],
         ]);
     }
 
@@ -222,20 +429,11 @@ class AttendanceController extends Controller
         // Get current time in Malaysia timezone
         $now = Carbon::now()->setTimezone('Asia/Kuala_Lumpur');
 
-        \Log::info('Clock-in attempt started', [
-            'user_id' => $user->id,
-            'business_id' => $business->id,
-        ]);
-
         try {
             // Get current salary rate for the user (optional for superadmins)
             $salaryRate = null;
             if (!$user->hasRole('superadmin')) {
                 $salaryRate = $user->getCurrentSalaryRate($business->id);
-                \Log::info('Salary rate retrieved', [
-                    'user_id' => $user->id,
-                    'salary_rate_id' => $salaryRate?->id,
-                ]);
             }
 
             // Prepare attendance data for new clock-in
@@ -248,17 +446,8 @@ class AttendanceController extends Controller
                 'status' => 'pending',
             ];
 
-            \Log::info('Creating new attendance record for clock-in', [
-                'attendance_data' => $attendanceData,
-            ]);
-
             // Create new attendance record (allows multiple clock-ins per day)
             $attendance = Attendance::create($attendanceData);
-
-            \Log::info('Attendance record created successfully', [
-                'attendance_id' => $attendance->id,
-                'uuid' => $attendance->uuid,
-            ]);
 
             return response()->json([
                 'success' => true,
@@ -301,12 +490,6 @@ class AttendanceController extends Controller
             $endTime = Carbon::now()->setTimezone('Asia/Kuala_Lumpur');
             $startTime = Carbon::parse($attendance->start_time)->setTimezone('Asia/Kuala_Lumpur');
             
-            \Log::info('Clock-out calculation:', [
-                'user_id' => $user->id,
-                'business_id' => $business->id,
-                'attendance_id' => $attendance->id,
-            ]);
-            
             if ($startTime < $endTime) {
                 $totalMinutes = $endTime->diffInMinutes($startTime);
                 $totalHours = $totalMinutes / 60;
@@ -320,16 +503,9 @@ class AttendanceController extends Controller
                 
                 $regularUnits = round($regularHours, 2);
                 $overtimeUnits = round($overtimeHours, 2);
-                
-                \Log::info('Clock-out hours calculated:', [
-                    'regularUnits' => $regularUnits,
-                    'overtimeUnits' => $overtimeUnits,
-                ]);
             } else {
                 $regularUnits = 0;
                 $overtimeUnits = 0;
-                
-                \Log::info('Clock-out: Invalid time range - start time is after end time');
             }
 
             // Update attendance record
@@ -393,9 +569,10 @@ class AttendanceController extends Controller
             // Users can edit their own attendance records
             $canEditOwn = $attendance->user_id === $user->id;
             
-            // Users can edit if they are owners, have attendance.edit permission, or are editing their own record
+            // Users can edit if they are owners, have attendances.edit permission, or are editing their own record
             $canManage = in_array($userRole, ['owner']) || 
-                        $user->can('attendance.edit') || 
+                        $user->can('attendances.edit') || 
+                        $user->can('attendances.approve') ||
                         $canEditOwn;
         }
 
@@ -412,7 +589,7 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Update attendance record (for managers, users with attendance.edit permission, or users editing their own records).
+     * Update attendance record (for managers, users with attendances.edit permission, or users editing their own records).
      */
     public function update(Request $request, Business $business, Attendance $attendance)
     {
@@ -428,14 +605,20 @@ class AttendanceController extends Controller
             // Users can edit their own attendance records
             $canEditOwn = $attendance->user_id === $user->id;
             
-            // Users can edit if they are owners, have attendance.edit permission, or are editing their own record
+            // Users can edit if they are owners, have attendances.edit permission, or are editing their own record
             $canManage = in_array($userRole, ['owner']) || 
-                        $user->can('attendance.edit') || 
+                        $user->can('attendances.edit') || 
+                        $user->can('attendances.approve') ||
                         $canEditOwn;
         }
 
         if (!$canManage) {
-            abort(403, 'Unauthorized to update attendance records.');
+            // Check if this is a status-only update and user has attendances.approve permission
+            if ($request->has('status') && count($request->all()) === 1 && $user->can('attendances.approve')) {
+                $canManage = true;
+            } else {
+                abort(403, 'Unauthorized to update attendance records.');
+            }
         }
 
         $validated = $request->validate([
@@ -469,27 +652,20 @@ class AttendanceController extends Controller
                 
                 $validated['regular_units'] = round($regularHours, 2);
                 $validated['overtime_units'] = round($overtimeHours, 2);
-                
-                \Log::info('Attendance update - hours calculated:', [
-                    'user_id' => $user->id,
-                    'attendance_id' => $attendance->id,
-                    'total_hours' => $totalHours,
-                    'regular_units' => $validated['regular_units'],
-                    'overtime_units' => $validated['overtime_units'],
-                ]);
             } else {
                 $validated['regular_units'] = 0;
                 $validated['overtime_units'] = 0;
-                
-                \Log::info('Attendance update - invalid time range:', [
-                    'user_id' => $user->id,
-                    'attendance_id' => $attendance->id,
-                ]);
             }
         } else {
-            // If times are not provided, reset hours
-            $validated['regular_units'] = 0;
-            $validated['overtime_units'] = 0;
+            // If times are not provided, preserve existing hours (don't reset to 0)
+            // This prevents losing hours when doing status-only updates
+            // Only preserve if the fields are not explicitly set in the request
+            if (!array_key_exists('regular_units', $validated)) {
+                $validated['regular_units'] = $attendance->regular_units;
+            }
+            if (!array_key_exists('overtime_units', $validated)) {
+                $validated['overtime_units'] = $attendance->overtime_units;
+            }
         }
 
         $attendance->update($validated);
@@ -498,7 +674,7 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Delete attendance record (for managers and users with attendance.delete permission).
+     * Delete attendance record (for managers and users with attendances.delete permission).
      * Note: Users cannot delete their own attendance records for security reasons.
      */
     public function destroy(Business $business, Attendance $attendance)
@@ -513,8 +689,8 @@ class AttendanceController extends Controller
             $userRole = $business->users()->where('user_id', $user->id)->first()->pivot->business_role ?? null;
             
             // Users cannot delete their own attendance records for security reasons
-            // Only managers, owners, or users with attendance.delete permission can delete
-            $canManage = in_array($userRole, ['owner']) || $user->can('attendance.delete');
+            // Only managers, owners, or users with attendances.delete permission can delete
+            $canManage = in_array($userRole, ['owner']) || $user->can('attendances.delete');
         }
 
         if (!$canManage) {

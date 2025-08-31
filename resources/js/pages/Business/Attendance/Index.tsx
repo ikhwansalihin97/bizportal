@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Clock, Users, Calendar, TrendingUp, User, CheckCircle, XCircle, AlertCircle, Hourglass, Edit, Trash2 } from 'lucide-react';
+import { Clock, Users, Calendar, TrendingUp, User, CheckCircle, XCircle, AlertCircle, Hourglass, Edit, Trash2, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
@@ -353,6 +353,27 @@ export default function AttendanceIndex({
     }
   };
 
+  const handleApproveAttendance = async (attendance: Attendance) => {
+    if (!confirm('Are you sure you want to approve this attendance record?')) {
+      return;
+    }
+
+    const url = `/businesses/${business.slug}/attendance/records/${attendance.uuid}`;
+
+    router.put(url, 
+      { status: 'approved' },
+      {
+        onSuccess: () => {
+          window.location.reload();
+        },
+        onError: (errors) => {
+          setErrorMessage('Failed to approve attendance record.');
+          clearErrorMessage();
+        }
+      }
+    );
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
@@ -385,20 +406,13 @@ export default function AttendanceIndex({
     // Parse the datetime - data is stored in Malaysia timezone in database
     const date = new Date(time);
     
-    // Since we're using timestamp columns, the time might be stored as UTC
-    // We need to convert it back to Malaysia timezone for display
-    // Malaysia is UTC+8, so we add 8 hours to get the correct local time
-    
-    // Get the UTC time and convert to Malaysia time
-    const utcHours = date.getUTCHours();
-    const utcMinutes = date.getMinutes();
-    
-    // Convert to Malaysia time (UTC+8)
-    const malaysiaHours = (utcHours + 8) % 24;
-    const malaysiaMinutes = utcMinutes;
+    // Format the time as stored in the database (Malaysia timezone)
+    // No conversion needed since database already stores correct time
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
     
     // Format as "HH:mm" in Malaysia time
-    return `${malaysiaHours.toString().padStart(2, '0')}:${malaysiaMinutes.toString().padStart(2, '0')}`;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
   const formatTotalHours = (attendance: Attendance) => {
@@ -482,6 +496,11 @@ export default function AttendanceIndex({
             </div>
             
             <div className="flex items-center gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/businesses/${business.slug}/attendance/my-records`}>
+                  My Records
+                </Link>
+              </Button>
               <div className="text-right">
                 <div className="text-sm text-muted-foreground">Current Time</div>
                 <div className="text-lg font-mono font-semibold">
@@ -662,14 +681,65 @@ export default function AttendanceIndex({
               ) : (
                 <div className="text-center py-8">
                   <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Recent Attendance Records</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Use the Clock In button above to start your work day
+                  <h3 className="text-lg font-medium mb-2">No recent attendance records</h3>
+                  <p className="text-muted-foreground">
+                    You haven't clocked in yet today. Use the Clock In button above to start tracking your time.
                   </p>
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* Quick Access for Admins */}
+          {(canManage || auth.permissions?.includes('users.view')) && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Employee Records Quick Access
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Button asChild variant="outline" className="h-auto p-4 flex-col items-start min-h-[120px] w-full">
+                    <Link href={`/businesses/${business.slug}/attendance/my-records`} className="w-full">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Clock className="h-5 w-5" />
+                        <span className="font-medium">My Records</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground text-left leading-relaxed break-words">
+                        View your personal attendance records
+                      </p>
+                    </Link>
+                  </Button>
+                  
+                  <Button asChild variant="outline" className="h-auto p-4 flex-col items-start min-h-[120px] w-full">
+                    <Link href={`/businesses/${business.slug}/attendance/report`} className="w-full">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="h-5 w-5" />
+                        <span className="font-medium">Attendance Report</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground text-left leading-relaxed break-words">
+                        Comprehensive reports for all employees
+                      </p>
+                    </Link>
+                  </Button>
+                  
+                  <Button asChild variant="outline" className="h-auto p-4 flex-col items-start min-h-[120px] w-full">
+                    <Link href={`/businesses/${business.slug}/attendance/my-records?user_id=all`} className="w-full">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users className="h-5 w-5" />
+                        <span className="font-medium">All Employees</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground text-left leading-relaxed break-words">
+                        View all employees' attendance records
+                      </p>
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Recent Attendance */}
           <Card>
@@ -727,12 +797,25 @@ export default function AttendanceIndex({
                               
                               {/* Action buttons for managers, superadmins, users with permissions, or users editing their own records */}
                               {(canManage || 
-                                auth.permissions?.includes('attendance.edit') || 
-                                auth.permissions?.includes('attendance.delete') ||
+                                auth.permissions?.includes('attendances.edit') || 
+                                auth.permissions?.includes('attendances.delete') ||
+                                auth.permissions?.includes('attendances.approve') ||
                                 attendance.user_id === auth.user?.id) && (
                                 <div className="flex items-center gap-2 flex-shrink-0">
+                                  {/* View Records button - show for all users */}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    asChild
+                                    className="h-8 px-2"
+                                  >
+                                    <Link href={`/businesses/${business.slug}/attendance/my-records?user_id=${attendance.user_id}`}>
+                                      <Eye className="h-3 w-3" />
+                                    </Link>
+                                  </Button>
+                                  
                                   {(canManage || 
-                                    auth.permissions?.includes('attendance.edit') ||
+                                    auth.permissions?.includes('attendances.edit') ||
                                     attendance.user_id === auth.user?.id) && (
                                     <Button
                                       variant="outline"
@@ -743,7 +826,21 @@ export default function AttendanceIndex({
                                       <Edit className="h-3 w-3" />
                                     </Button>
                                   )}
-                                  {(canManage || auth.permissions?.includes('attendance.delete')) && (
+                                  
+                                  {/* Approve button - only show for pending records and users with approve permission */}
+                                  {(canManage || auth.permissions?.includes('attendances.approve')) && 
+                                   attendance.status === 'pending' && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleApproveAttendance(attendance)}
+                                      className="h-8 px-2 text-green-600 hover:text-green-700"
+                                    >
+                                      <CheckCircle className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                  
+                                  {(canManage || auth.permissions?.includes('attendances.delete')) && (
                                     <Button
                                       variant="outline"
                                       size="sm"

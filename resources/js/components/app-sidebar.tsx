@@ -86,6 +86,16 @@ export function AppSidebar() {
       businessItems.push({
         title: 'Attendance',
         url: `/businesses/${displayBusiness.slug}/attendance`,
+        items: [
+          {
+            title: 'Overview',
+            url: `/businesses/${displayBusiness.slug}/attendance`,
+          },
+          {
+            title: 'My Records',
+            url: `/businesses/${displayBusiness.slug}/attendance/my-records`,
+          },
+        ],
       })
     }
 

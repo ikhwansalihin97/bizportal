@@ -106,7 +106,7 @@ export default function BusinessUserInvite({ business, availableUsers, available
     setErrors({});
     setSubmitSuccess(false);
 
-    router.post(`/businesses/${business.slug}/users`, formData, {
+    router.post(`/businesses/${business.slug}/users/invite`, formData, {
       onSuccess: () => {
         setSubmitSuccess(true);
         setFormData({
