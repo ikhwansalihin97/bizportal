@@ -65,6 +65,13 @@ class BusinessAdvanceController extends Controller
             $query->where('type', $request->type);
         }
 
+        // Month filter - filter by advance date
+        if ($request->filled('month')) {
+            $month = $request->month; // Format: YYYY-MM
+            $query->whereYear('advance_date', substr($month, 0, 4))
+                  ->whereMonth('advance_date', substr($month, 5, 2));
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -108,7 +115,7 @@ class BusinessAdvanceController extends Controller
             'advances' => $advances,
             'users' => $users,
             'summary' => $summary,
-            'filters' => $request->only(['status', 'user_id', 'type', 'search']),
+            'filters' => $request->only(['status', 'user_id', 'type', 'search', 'month']),
             'canCreate' => $canCreate,
             'canEdit' => $canEdit,
             'canDelete' => $canDelete,

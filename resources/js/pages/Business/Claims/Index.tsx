@@ -76,6 +76,7 @@ interface Props {
     category?: string;
     expense_type?: string;
     search?: string;
+    month?: string;
   };
   canCreate: boolean;
   canEdit: boolean;
@@ -103,6 +104,7 @@ export default function ClaimsIndex({
   const [userFilter, setUserFilter] = useState(filters.user_id || 'all');
   const [categoryFilter, setCategoryFilter] = useState(filters.category || 'all');
   const [expenseTypeFilter, setExpenseTypeFilter] = useState(filters.expense_type || 'all');
+  const [monthFilter, setMonthFilter] = useState(filters.month || '');
 
   const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -120,6 +122,7 @@ export default function ClaimsIndex({
         user_id: userFilter === 'all' ? '' : userFilter,
         category: categoryFilter === 'all' ? '' : categoryFilter,
         expense_type: expenseTypeFilter === 'all' ? '' : expenseTypeFilter,
+        month: monthFilter,
       },
       { preserveState: true }
     );
@@ -140,6 +143,9 @@ export default function ClaimsIndex({
     } else if (filterType === 'expense_type') {
       newFilters.expense_type = value === 'all' ? '' : value;
       setExpenseTypeFilter(value);
+    } else if (filterType === 'month') {
+      newFilters.month = value;
+      setMonthFilter(value);
     }
 
     router.get(
@@ -155,6 +161,7 @@ export default function ClaimsIndex({
     setUserFilter('all');
     setCategoryFilter('all');
     setExpenseTypeFilter('all');
+    setMonthFilter('');
     
     router.get(
       route('businesses.claims.index', business.slug),
@@ -331,7 +338,7 @@ export default function ClaimsIndex({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div>
                 <label className="text-sm font-medium">Search</label>
                 <div className="flex gap-2 mt-1">
@@ -422,6 +429,16 @@ export default function ClaimsIndex({
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Month</label>
+                <Input
+                  type="month"
+                  value={monthFilter}
+                  onChange={(e) => handleFilterChange('month', e.target.value)}
+                  className="mt-1"
+                />
               </div>
             </div>
 

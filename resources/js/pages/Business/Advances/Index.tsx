@@ -70,6 +70,7 @@ interface Props {
     user_id?: string;
     type?: string;
     search?: string;
+    month?: string;
   };
   canCreate: boolean;
   canEdit: boolean;
@@ -96,6 +97,7 @@ export default function AdvancesIndex({
   const [statusFilter, setStatusFilter] = useState(filters.status || 'all');
   const [userFilter, setUserFilter] = useState(filters.user_id || 'all');
   const [typeFilter, setTypeFilter] = useState(filters.type || 'all');
+  const [monthFilter, setMonthFilter] = useState(filters.month || '');
 
   const breadcrumbs = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -112,6 +114,7 @@ export default function AdvancesIndex({
         status: statusFilter === 'all' ? '' : statusFilter,
         user_id: userFilter === 'all' ? '' : userFilter,
         type: typeFilter === 'all' ? '' : typeFilter,
+        month: monthFilter,
       },
       { preserveState: true }
     );
@@ -129,6 +132,9 @@ export default function AdvancesIndex({
     } else if (filterType === 'type') {
       newFilters.type = value === 'all' ? '' : value;
       setTypeFilter(value);
+    } else if (filterType === 'month') {
+      newFilters.month = value;
+      setMonthFilter(value);
     }
 
     router.get(
@@ -143,6 +149,7 @@ export default function AdvancesIndex({
     setStatusFilter('all');
     setUserFilter('all');
     setTypeFilter('all');
+    setMonthFilter('');
     
     router.get(
       route('businesses.advances.index', business.slug),
@@ -298,7 +305,7 @@ export default function AdvancesIndex({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
                 <label className="text-sm font-medium">Search</label>
                 <div className="flex gap-2 mt-1">
@@ -370,6 +377,16 @@ export default function AdvancesIndex({
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Month</label>
+                <Input
+                  type="month"
+                  value={monthFilter}
+                  onChange={(e) => handleFilterChange('month', e.target.value)}
+                  className="mt-1"
+                />
               </div>
             </div>
 

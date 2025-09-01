@@ -69,6 +69,15 @@ class BusinessClaimController extends Controller
             $query->where('expense_type', $request->expense_type);
         }
 
+        // Month filter - filter by expense_date and submitted_at
+        if ($request->filled('month')) {
+            $month = $request->month; // Format: YYYY-MM
+            $query->where(function ($q) use ($month) {
+                $q->whereYear('expense_date', substr($month, 0, 4))
+                  ->whereMonth('expense_date', substr($month, 5, 2));
+            });
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -114,7 +123,7 @@ class BusinessClaimController extends Controller
             'claims' => $claims,
             'users' => $users,
             'summary' => $summary,
-            'filters' => $request->only(['status', 'user_id', 'category', 'expense_type', 'search']),
+            'filters' => $request->only(['status', 'user_id', 'category', 'expense_type', 'search', 'month']),
             'canCreate' => $canCreate,
             'canEdit' => $canEdit,
             'canDelete' => $canDelete,
