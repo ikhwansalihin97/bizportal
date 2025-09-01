@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Clock, Users, Calendar, TrendingUp, User, CheckCircle, XCircle, AlertCircle, Hourglass, Edit, Trash2, Eye } from 'lucide-react';
+import { Clock, Users, Calendar, TrendingUp, User, CheckCircle, XCircle, AlertCircle, Hourglass, Edit, Trash2, Eye, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
@@ -55,6 +55,14 @@ interface Props {
   recentAttendance: Record<string, Attendance[]>;
   userRole: string;
   canManage: boolean;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    roles: string[];
+    permissions: string[];
+    isSuperAdmin: boolean;
+  };
 }
 
 export default function AttendanceIndex({
@@ -66,8 +74,10 @@ export default function AttendanceIndex({
   recentAttendance: initialRecentAttendance,
   userRole,
   canManage,
+  user,
 }: Props) {
   const { auth } = usePage<SharedData>().props;
+  
   const [isClockingIn, setIsClockingIn] = useState(false);
   const [isClockingOut, setIsClockingOut] = useState(false);
   const [clockOutNotes, setClockOutNotes] = useState('');
@@ -115,7 +125,7 @@ export default function AttendanceIndex({
   // Update clock-in status when recentAttendance changes or on initial load
   useEffect(() => {
     setIsCurrentlyClockedIn(hasIncompleteAttendance());
-  }, [recentAttendance, auth.user?.id]);
+  }, [recentAttendance, user?.id]);
 
   // Helper function to check if current user has incomplete attendance
   const hasIncompleteAttendance = () => {
@@ -123,7 +133,7 @@ export default function AttendanceIndex({
     
     return Object.values(recentAttendance).some(attendances => 
       attendances.some(att => 
-        att.user_id === auth.user?.id && !att.end_time
+        att.user_id === user?.id && !att.end_time
       )
     );
   };
@@ -501,6 +511,17 @@ export default function AttendanceIndex({
                   My Records
                 </Link>
               </Button>
+              
+              {/* Create Manual Record Button - Only show for users with permission */}
+              {(user?.roles?.includes('superadmin') || user?.permissions?.includes('attendances.create')) && (
+                <Button asChild variant="default" size="sm">
+                  <Link href={`/businesses/${business.slug}/attendance/create`}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Manual Record
+                  </Link>
+                </Button>
+              )}
+              
               <div className="text-right">
                 <div className="text-sm text-muted-foreground">Current Time</div>
                 <div className="text-lg font-mono font-semibold">
@@ -610,10 +631,10 @@ export default function AttendanceIndex({
                   {/* Show user's recent attendance records */}
                   {Object.entries(recentAttendance)
                     .filter(([date, attendances]) => 
-                      attendances.some(att => att.user_id === auth.user?.id)
+                      attendances.some(att => att.user_id === user?.id)
                     )
                     .map(([date, attendances]) => {
-                      const userAttendances = attendances.filter(att => att.user_id === auth.user?.id);
+                      const userAttendances = attendances.filter(att => att.user_id === user?.id);
                       return (
                         <div key={date} className="border rounded-lg p-4">
                           <h4 className="font-medium text-sm text-muted-foreground mb-3">
@@ -649,7 +670,7 @@ export default function AttendanceIndex({
                               </div>
                               
                               {/* Clock Out button for incomplete records */}
-                              {!attendance.end_time && attendance.user_id === auth.user?.id && (
+                              {!attendance.end_time && attendance.user_id === user?.id && (
                                 <div className="flex items-center gap-4">
                                   <Button 
                                     onClick={() => handleClockOut()}
@@ -691,7 +712,7 @@ export default function AttendanceIndex({
           </Card>
 
           {/* Quick Access for Admins */}
-          {(canManage || auth.permissions?.includes('users.view')) && (
+          {(canManage || user.permissions?.includes('users.view')) && (
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -797,10 +818,10 @@ export default function AttendanceIndex({
                               
                               {/* Action buttons for managers, superadmins, users with permissions, or users editing their own records */}
                               {(canManage || 
-                                auth.permissions?.includes('attendances.edit') || 
-                                auth.permissions?.includes('attendances.delete') ||
-                                auth.permissions?.includes('attendances.approve') ||
-                                attendance.user_id === auth.user?.id) && (
+                                user.permissions?.includes('attendances.edit') || 
+                                user.permissions?.includes('attendances.delete') ||
+                                user.permissions?.includes('attendances.approve') ||
+                                attendance.user_id === user?.id) && (
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                   {/* View Records button - show for all users */}
                                   <Button
@@ -815,8 +836,8 @@ export default function AttendanceIndex({
                                   </Button>
                                   
                                   {(canManage || 
-                                    auth.permissions?.includes('attendances.edit') ||
-                                    attendance.user_id === auth.user?.id) && (
+                                    user.permissions?.includes('attendances.edit') ||
+                                    attendance.user_id === user?.id) && (
                                     <Button
                                       variant="outline"
                                       size="sm"
@@ -828,7 +849,7 @@ export default function AttendanceIndex({
                                   )}
                                   
                                   {/* Approve button - only show for pending records and users with approve permission */}
-                                  {(canManage || auth.permissions?.includes('attendances.approve')) && 
+                                  {(canManage || user.permissions?.includes('attendances.approve')) && 
                                    attendance.status === 'pending' && (
                                     <Button
                                       variant="outline"
@@ -840,7 +861,7 @@ export default function AttendanceIndex({
                                     </Button>
                                   )}
                                   
-                                  {(canManage || auth.permissions?.includes('attendances.delete')) && (
+                                  {(canManage || user.permissions?.includes('attendances.delete')) && (
                                     <Button
                                       variant="outline"
                                       size="sm"

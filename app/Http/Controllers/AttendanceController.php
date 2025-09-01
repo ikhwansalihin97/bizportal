@@ -73,6 +73,15 @@ class AttendanceController extends Controller
             'stats' => $stats,
             'userRole' => $userRole,
             'canManage' => $canManage,
+            // Include user data with roles and permissions for frontend authorization
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'roles' => $user->profile && $user->profile->role === 'superadmin' ? ['superadmin'] : $user->roles->pluck('name')->toArray(),
+                'permissions' => $user->permissions->pluck('name')->toArray(),
+                'isSuperAdmin' => $user->isSuperAdmin(),
+            ],
         ]);
     }
 
@@ -671,6 +680,95 @@ class AttendanceController extends Controller
         $attendance->update($validated);
 
         return back()->with('success', 'Attendance record updated successfully.');
+    }
+
+    /**
+     * Show the form for creating a new attendance record.
+     * Only accessible by users with attendance.create permission or superadmin.
+     */
+    public function create(Business $business)
+    {
+        $user = auth()->user();
+        
+        // Check if user can create attendance records
+        if (!($user->profile && $user->profile->role === 'superadmin') && !$user->can('attendances.create')) {
+            abort(403, 'Unauthorized to create attendance records.');
+        }
+        
+        // Get business users for selection
+        $businessUsers = $business->users()->with('profile')->get();
+        
+        return Inertia::render('Business/Attendance/Create', [
+            'business' => $business,
+            'businessUsers' => $businessUsers,
+        ]);
+    }
+
+    /**
+     * Store a newly created attendance record.
+     * Only accessible by users with attendance.create permission or superadmin.
+     */
+    public function store(Request $request, Business $business)
+    {
+        $user = auth()->user();
+        
+        // Check if user can create attendance records
+        if (!($user->profile && $user->profile->role === 'superadmin') && !$user->can('attendances.create')) {
+            abort(403, 'Unauthorized to create attendance records.');
+        }
+        
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'work_date' => 'required|date',
+            'start_time' => 'nullable|date',
+            'end_time' => 'nullable|date|after:start_time',
+            'notes' => 'nullable|string|max:500',
+            'status' => 'required|in:pending,approved,rejected',
+        ]);
+        
+        // Check if the selected user belongs to this business
+        if (!$business->users()->where('user_id', $validated['user_id'])->exists()) {
+            abort(403, 'Selected user does not belong to this business.');
+        }
+        
+        // Calculate hours automatically if both start and end times are provided
+        if (!empty($validated['start_time']) && !empty($validated['end_time'])) {
+            $startTime = \Carbon\Carbon::parse($validated['start_time'])->setTimezone('Asia/Kuala_Lumpur');
+            $endTime = \Carbon\Carbon::parse($validated['end_time'])->setTimezone('Asia/Kuala_Lumpur');
+            
+            // Update the validated data with Malaysia timezone times
+            $validated['start_time'] = $startTime->format('Y-m-d H:i:s');
+            $validated['end_time'] = $endTime->format('Y-m-d H:i:s');
+            
+            if ($startTime < $endTime) {
+                $totalMinutes = $endTime->diffInMinutes($startTime);
+                $totalHours = $totalMinutes / 60;
+                
+                $totalHours = abs($totalHours);
+                
+                // Assuming 8 hours is regular time, anything over is overtime
+                $regularHours = min($totalHours, 8);
+                $overtimeHours = max(0, $totalHours - 8);
+                
+                $validated['regular_units'] = round($regularHours, 2);
+                $validated['overtime_units'] = round($overtimeHours, 2);
+            } else {
+                $validated['regular_units'] = 0;
+                $validated['overtime_units'] = 0;
+            }
+        } else {
+            $validated['regular_units'] = 0;
+            $validated['overtime_units'] = 0;
+        }
+        
+        // Add business_id to the validated data
+        $validated['business_id'] = $business->id;
+        
+        // Create the attendance record
+        $attendance = Attendance::create($validated);
+        
+        return redirect()->route('businesses.attendance.index', $business)
+            ->with('success', 'Attendance record created successfully.');
     }
 
     /**

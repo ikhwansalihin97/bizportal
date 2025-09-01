@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->trustProxies(at: "*");
+
+        // Register custom middleware aliases
+        $middleware->alias([
+            'superadmin.or.permission' => \App\Http\Middleware\SuperadminOrPermission::class,
+        ]);
 
         $middleware->web(append: [
             HandleAppearance::class,

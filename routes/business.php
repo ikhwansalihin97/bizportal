@@ -44,6 +44,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('attendance.clockIn');
             Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('attendance.clockOut');
             Route::get('/status', [AttendanceController::class, 'status'])->name('attendance.status');
+            
+            // Manual Attendance Record Management (Admin/Superadmin only)
+            Route::middleware(['auth', 'superadmin.or.permission:attendances.create'])->group(function () {
+                Route::get('/create', [AttendanceController::class, 'create'])->name('attendance.create');
+                Route::post('/', [AttendanceController::class, 'store'])->name('attendance.store');
+            });
+            
             Route::get('/records/{attendance}/edit', [AttendanceController::class, 'edit'])->name('attendance.edit');
             Route::put('/records/{attendance}', [AttendanceController::class, 'update'])->name('attendance.update');
             Route::delete('/records/{attendance}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
