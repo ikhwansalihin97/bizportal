@@ -290,13 +290,12 @@ class AttendanceController extends Controller
             $query->where('status', $statusFilter);
         }
 
-        // Get paginated results
+        // Get all results (no pagination)
         $attendance = $query->orderBy('work_date', 'desc')
-            ->paginate(15)
-            ->withQueryString();
+            ->get();
 
-        // Calculate summary stats
-        $summaryQuery = Attendance::where('business_id', $business->id);
+        // Calculate summary stats from the same filtered data
+        $summaryQuery = clone $query;
         
         // Always load user information for consistency
         $summaryQuery->with('user');

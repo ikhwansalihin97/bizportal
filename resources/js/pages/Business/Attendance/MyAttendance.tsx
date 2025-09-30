@@ -37,13 +37,7 @@ interface Business {
 
 interface Props {
   business: Business;
-  attendance: {
-    data: Attendance[];
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    total: number;
-  };
+  attendance: Attendance[];
   filters: {
     start_date: string;
     end_date: string;
@@ -323,7 +317,7 @@ export default function MyAttendance({
               <div className="flex items-center gap-2 text-blue-700">
                 <Users className="h-5 w-5" />
                 <span className="font-medium">
-                  Viewing attendance records for all employees ({attendance.total} total records)
+                  Viewing attendance records for all employees ({attendance.length} total records)
                 </span>
               </div>
             </CardContent>
@@ -421,7 +415,7 @@ export default function MyAttendance({
             <CardTitle>Attendance Records</CardTitle>
           </CardHeader>
           <CardContent>
-            {attendance.data.length === 0 ? (
+            {attendance.length === 0 ? (
               <div className="text-center py-8">
                 <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">No attendance records found</h3>
@@ -449,7 +443,7 @@ export default function MyAttendance({
                     </tr>
                   </thead>
                   <tbody>
-                    {attendance.data.map((record) => (
+                    {attendance.map((record) => (
                       <tr key={record.uuid} className="border-b hover:bg-gray-50">
                         {shouldShowEmployeeColumn() ? (
                           <td className="p-3">
@@ -476,34 +470,10 @@ export default function MyAttendance({
               </div>
             )}
 
-            {/* Pagination */}
-            {attendance.last_page > 1 && (
-              <div className="flex items-center justify-between mt-6">
-                <div className="text-sm text-muted-foreground">
-                  Showing {((attendance.current_page - 1) * attendance.per_page) + 1} to{' '}
-                  {Math.min(attendance.current_page * attendance.per_page, attendance.total)} of{' '}
-                  {attendance.total} results
-                </div>
-                <div className="flex gap-2">
-                  {attendance.current_page > 1 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.get(`/businesses/${business.slug}/attendance/my-records?page=${attendance.current_page - 1}`, {}, { preserveState: true })}
-                    >
-                      Previous
-                    </Button>
-                  )}
-                  {attendance.current_page < attendance.last_page && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.get(`/businesses/${business.slug}/attendance/my-records?page=${attendance.current_page + 1}`, {}, { preserveState: true })}
-                    >
-                      Next
-                    </Button>
-                  )}
-                </div>
+            {/* Show total count */}
+            {attendance.length > 0 && (
+              <div className="mt-6 text-sm text-muted-foreground">
+                Showing {attendance.length} attendance records
               </div>
             )}
           </CardContent>
